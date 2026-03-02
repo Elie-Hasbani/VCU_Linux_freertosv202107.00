@@ -12,77 +12,76 @@
 #include "console.h"
 
 #ifdef BUILD_DIR
-#define BUILD         BUILD_DIR
+#define BUILD BUILD_DIR
 #else
-#define BUILD         "./"
+#define BUILD "./"
 #endif
 
-static void handle_sigint( int signal );
+static void handle_sigint(int signal);
 
 extern void MainApp();
 
-int main( void )
+int main(void)
 {
    /* SIGINT is not blocked by the posix port */
-   signal( SIGINT, handle_sigint );
+   signal(SIGINT, handle_sigint);
 
    console_init();
-   console_print( "Starting echo blinky demo\n" );
+   console_print("Starting echo blinky demo\n");
 
    MainApp();
 
    return 0;
 }
 
-void vApplicationMallocFailedHook( void )
+void vApplicationMallocFailedHook(void)
 {
-   vAssertCalled( __FILE__, __LINE__ );
+   vAssertCalled(__FILE__, __LINE__);
 }
 
-void vApplicationIdleHook( void )
+void vApplicationIdleHook(void)
 {
 }
 
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char * pcTaskName )
+void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-   ( void ) pcTaskName;
-   ( void ) pxTask;
-   vAssertCalled( __FILE__, __LINE__ );
+   (void)pcTaskName;
+   (void)pxTask;
+   vAssertCalled(__FILE__, __LINE__);
 }
 
-void vAssertCalled( const char * const pcFileName, unsigned long ulLine )
+void vAssertCalled(const char *const pcFileName, unsigned long ulLine)
 {
    taskENTER_CRITICAL();
    {
-      while( 1 )
+      while (1)
       {
-         __asm volatile ( "NOP" );
-         __asm volatile ( "NOP" );
+         __asm volatile("NOP");
+         __asm volatile("NOP");
       }
    }
    taskEXIT_CRITICAL();
-
 }
 
-void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer, StackType_t ** ppxIdleTaskStackBuffer, uint32_t * pulIdleTaskStackSize )
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize)
 {
    static StaticTask_t xIdleTaskTCB;
-   static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+   static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
    *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
    *ppxIdleTaskStackBuffer = uxIdleTaskStack;
    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 
-void handle_sigint( int signal )
+void handle_sigint(int signal)
 {
    int xReturn;
 
-   xReturn = chdir( BUILD ); /* changing dir to place gmon.out inside build */
+   xReturn = chdir(BUILD); /* changing dir to place gmon.out inside build */
 
-   if( xReturn == -1 )
+   if (xReturn == -1)
    {
-      printf( "chdir into %s error is %d\n", BUILD, errno );
+      printf("chdir into %s error is %d\n", BUILD, errno);
    }
 
-   exit( 2 );
+   exit(2);
 }
