@@ -6,10 +6,10 @@
 
 bool CheckAndLimitRange(int *potval, int potIdx);
 float NormalizeThrottle(int potval, int potIdx);
-float CalcThrottle(MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx);
+float CalcThrottle(const MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx);
 float CalcIdleSpeed(int speed);
 float CalcCruiseSpeed(int speed);
-bool TemperatureDerate(float tmp, float tmpMax, float *finalSpnt);
+bool TemperatureDerate(const GlobalState_t *globalState, float *finalSpnt);
 void UdcLimitCommand(float *finalSpnt, float udc);
 void IdcLimitCommand(float *finalSpnt, float idc);
 void SpeedLimitCommand(float *finalSpnt, int speed);
@@ -46,5 +46,9 @@ extern float ThrotRpmFilt;
 extern int speedFiltered;
 extern float potnomFiltered;
 extern float brkRamped;
+
+extern int ThrotRampRpm;
+extern float ThrotRamp;
+extern float ThrotRampMax;
 
 #endif // THROTTLE_H

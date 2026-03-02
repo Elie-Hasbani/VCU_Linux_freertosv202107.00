@@ -1,0 +1,4 @@
+#define DERATE_HIGHTEMP (1U << 0)
+#define DERATE_OVERTEMP (1U << 1)
+#define DERATE_UNDERVOLT (1U << 2)
+#define DERATE_OVERCURR (1U << 3)

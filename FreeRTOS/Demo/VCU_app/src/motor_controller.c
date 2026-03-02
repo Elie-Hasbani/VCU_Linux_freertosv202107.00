@@ -19,8 +19,11 @@ void MotorController(void *pvParameters)
     motorState.speed = 0;
     motorState.direction = 1; // forward
     motorState.brakePedalPressed = false;
-    motorState.appsValues[0].data = 2050;
-    motorState.appsValues[1].data = 2070;
+    motorState.appsValues[0].data = 1050;
+    motorState.appsValues[1].data = 1070;
+
+    MotorControllerParams_t *params = (MotorControllerParams_t *)pvParameters;
+    GlobalState_t *globalState = params->globalState;
 
     while (1)
     {
@@ -31,7 +34,8 @@ void MotorController(void *pvParameters)
         if (xReturn == pdPASS)
         {
             console_print("Received from queue: id=%lu, timestamp=%lu\n", msg.id, msg.timestamp);
-            float throttle = GetUserThrottleCommand(&motorState);
+            // float throttle = GetUserThrottleCommand(&motorState);
+            float throttle = ProcessThrottle(&motorState, globalState);
             console_print("Calculated throttle command: %f\n", throttle);
         }
         else

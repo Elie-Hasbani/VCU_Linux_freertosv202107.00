@@ -1,6 +1,7 @@
 
 
-float GetUserThrottleCommand();
+float GetUserThrottleCommand(const MotorControlState_t *motorState);
+float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t *globalState);
 
 inline static int32_t change(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
 {

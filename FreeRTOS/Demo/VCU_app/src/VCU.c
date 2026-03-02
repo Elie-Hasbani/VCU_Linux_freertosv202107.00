@@ -25,6 +25,9 @@ void MainApp(void)
     initThrottleValues();
     // GetUserThrottleCommand();
 
+    GlobalState_t globalState = {1};
+
+    MotorControllerParams_t motorControllerParams = {&globalState};
     xTaskCreate(
         TaskCanRx,
         "CAN_RX",
@@ -37,7 +40,7 @@ void MainApp(void)
         MotorController,
         "MOTOR_CONTROLLER",
         configMINIMAL_STACK_SIZE,
-        NULL,
+        &motorControllerParams,
         tskIDLE_PRIORITY,
         NULL);
 

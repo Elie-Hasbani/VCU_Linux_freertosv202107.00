@@ -6,7 +6,7 @@
 #include "my_math.h"
 #include "console.h"
 
-float GetUserThrottleCommand(MotorControlState_t *motorState)
+float GetUserThrottleCommand(const MotorControlState_t *motorState)
 {
     bool brake = motorState->brakePedalPressed; // Param::GetBool(Param::din_brake);
     // int potmode = 0;    // Param::GetInt(Param::potmode);
@@ -87,4 +87,41 @@ float GetUserThrottleCommand(MotorControlState_t *motorState)
         return CalcThrottle(motorState, pot2val, 1);
     else
         return 0.0;
+}
+
+float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t *globalState)
+{
+    float finalSpnt;
+    int speed = motorState->speed;
+
+    if (speed < ThrotRampRpm)
+    {
+        throttleRamp = ThrotRamp;
+    }
+
+    else
+    {
+        throttleRamp = ThrotRampMax;
+    }
+
+    finalSpnt = GetUserThrottleCommand(motorState);
+
+    // Throttle::UdcLimitCommand(finalSpnt,Variable             s::GetFloat(Variables::udc));
+    // Throttle::IdcLimitCommand(finalSpnt, ABS(Variables::GetFloat(Variables::idc)));
+    SpeedLimitCommand(&finalSpnt, ABS(speed));
+
+    if (TemperatureDerate(globalState, &finalSpnt))
+    {
+        console_print("derating becouse of temprature");
+    }
+
+    // finalSpnt = RampThrottle(finalSpnt);
+
+    // make sure the torque percentage is NEVER out of range
+    if (finalSpnt < -100.0f)
+        finalSpnt = -100.0f;
+    else if (finalSpnt > 100.0f)
+        finalSpnt = 100.0f;
+
+    return finalSpnt;
 }

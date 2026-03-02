@@ -26,4 +26,19 @@ typedef struct
 
 } MotorControlState_t;
 
+typedef struct
+{
+    uint16_t derateReason;
+} GlobalState_t;
+
+//
+//
+//
+//
+// Tasks parameters
+typedef struct
+{
+    GlobalState_t *globalState
+} MotorControllerParams_t;
+
 #endif // STRUCTS_H

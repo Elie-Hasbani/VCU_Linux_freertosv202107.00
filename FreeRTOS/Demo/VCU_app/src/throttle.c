@@ -3,6 +3,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "my_math.h"
+#include "project_config.h"
 
 #define POT_SLACK 200
 
@@ -58,6 +59,10 @@ float PedalPosTot = 0;
 float PedalPosArr[PedalPosArrLen];
 uint8_t PedalPosIdx = 0;
 int8_t PedalReq = 0; // positive is accel negative is decell
+
+int ThrotRampRpm;
+float ThrotRamp;
+float ThrotRampMax;
 
 /**
  * @brief Check the throttle input for sanity and limit the range to min/max values
@@ -127,7 +132,7 @@ float NormalizeThrottle(int potval, int potIdx)
  * @param brkpedal Brake pedal input (true for brake pedal pressed, false otherwise).
  * @return float
  */
-float CalcThrottle(MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx) /*int potval, int potIdx, bool brkpedal*/
+float CalcThrottle(const MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx) /*int potval, int potIdx, bool brkpedal*/
 {
     int speed = motorControlState->speed;    // Variables::GetInt(VarIds::SPEED);
     bool dir = motorControlState->direction; // Variables::GetInt(VarIds::DIRECTION);
@@ -247,5 +252,96 @@ float CalcThrottle(MotorControlState_t *motorControlState, int processedPotVal, 
     }
 
     LastPedalPos = PedalPos; // Save current pedal position for next loop. //inutilisé
+    return potnom;
+}
+
+void SpeedLimitCommand(float *finalSpnt, int speed)
+{
+    static int speedFiltered = 0;
+
+    speedFiltered = IIRFILTER(speedFiltered, speed, 4);
+
+    if (finalSpnt > 0) // Only limit if driver is asking for positive torque (acceleration)
+    {
+        int speederr = speedLimit - speedFiltered; // How far below the speed limit we are
+        int res = speederr / 4;                    // Scale the error down
+
+        res = MAX(0, res);               // Never allow negative (no throttle if over speed limit)
+        finalSpnt = MIN(res, finalSpnt); // Clamp driver’s request down to res if necessary
+    }
+}
+
+bool TemperatureDerate(const GlobalState_t *globalState, float *finalSpnt)
+{
+    uint16_t DerateReason = globalState->derateReason;
+    float limit = 0;
+    bool tempHigh = DerateReason & DERATE_HIGHTEMP; // tempMax + 2.0f(defined in monitor Temprature Task)
+    bool overTemp = DerateReason & DERATE_OVERTEMP;
+
+    if (!tempHigh && !overTemp) // temperature low, allow full request
+    {
+        limit = 100.0f;
+    }
+    else if (tempHigh && !overTemp) // high, limit to 50% of max troque
+    {
+        limit = 50.0f;
+        DerateReason |= 16;
+    } // else temp way too high and limit = 0
+
+    if (finalSpnt >= 0)
+    {
+        *finalSpnt = MIN(*finalSpnt, limit);
+    }
+    else
+    {
+        *finalSpnt = MAX(*finalSpnt, -limit);
+    }
+
+    return limit < 100.0f;
+}
+
+/**
+ * @brief Apply the throttle ramping parameters for ramping up and down.
+ *
+ * @param potnom Normalized throttle command in percent, range [-100.0, 100.0].
+ * @return float Ramped throttle command in percent, range [-100.0, 100.0].
+ */
+float RampThrottle(float potnom)
+{
+    // make sure potnom is within the boundaries of [throtmin, throtmax]
+    potnom = MIN(potnom, throtmax);
+    potnom = MAX(potnom, throtmin);
+
+    if (potnom >= throttleRamped) // higher throttle command than currently applied
+    {
+        if (potnom > 0)
+        {
+            //                    //  current       target,  rate
+            throttleRamped = RAMPUP(throttleRamped, potnom, throttleRamp);
+            potnom = throttleRamped;
+        }
+        else
+        {
+            throttleRamped = RAMPUP(throttleRamped, potnom, regenRamp);
+            potnom = throttleRamped;
+        }
+    }
+    else //(potnom < throttleRamped) // lower throttle command than currently applied
+    {
+        if (potnom >= 0)
+        {
+            throttleRamped = potnom; // No ramping from high throttle to low throttle
+        }
+        else
+        {
+            if (throttleRamped > 0)
+            {
+                throttleRamped = 0;
+            }
+            throttleRamped = RAMPDOWN(throttleRamped, potnom, regenRamp);
+            potnom = throttleRamped;
+        }
+    }
+
     return potnom;
 }
