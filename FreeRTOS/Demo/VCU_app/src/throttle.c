@@ -24,7 +24,7 @@ float speedkp;
 int speedflt;
 float idleThrotLim;
 float regenRamp;
-float throttleRamp;
+float actualThrottleRamp;
 int bmslimhigh;
 int bmslimlow;
 int accelmax;
@@ -60,9 +60,9 @@ float PedalPosArr[PedalPosArrLen];
 uint8_t PedalPosIdx = 0;
 int8_t PedalReq = 0; // positive is accel negative is decell
 
-int ThrotRampRpm;
-float ThrotRamp;
-float ThrotRampMax;
+int throtRampRpm;
+float throtRamp;
+float throtRampMax;
 
 /**
  * @brief Check the throttle input for sanity and limit the range to min/max values
@@ -316,9 +316,11 @@ float RampThrottle(float potnom)
     {
         if (potnom > 0)
         {
+            console_print("Ramping up throttle from %f to %f with ramp rate %f\n", throttleRamped, potnom, actualThrottleRamp);
             //                    //  current       target,  rate
-            throttleRamped = RAMPUP(throttleRamped, potnom, throttleRamp);
+            throttleRamped = RAMPUP(throttleRamped, potnom, actualThrottleRamp);
             potnom = throttleRamped;
+            console_print("Ramping up throttle: %f\n", throttleRamped);
         }
         else
         {

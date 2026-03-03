@@ -31,7 +31,7 @@ extern float speedkp;
 extern int speedflt;
 extern float idleThrotLim;
 extern float regenRamp;
-extern float throttleRamp;
+extern float actualThrottleRamp;
 extern int bmslimhigh;
 extern int bmslimlow;
 extern int accelmax;
@@ -47,8 +47,8 @@ extern int speedFiltered;
 extern float potnomFiltered;
 extern float brkRamped;
 
-extern int ThrotRampRpm;
-extern float ThrotRamp;
-extern float ThrotRampMax;
+extern int throtRampRpm;
+extern float throtRamp;
+extern float throtRampMax;
 
 #endif // THROTTLE_H

@@ -76,7 +76,9 @@ initThrottleValues()
     throtdead = 2.0f;    // Deadband around 0% p
 
     regenRamp = 2.0f;    // %/10ms rate of change for regen
-    throttleRamp = 3.0f; // %/10ms rate of chang
+    throtRamp = 3.0f;    // %/10ms rate of chang
+    throtRampMax = 5.0f; // %/10ms rate of chang
+    throtRampRpm = 2000; // RPM at which to switch from throtRamp to throtRampMax
 
     udcmin = 250.0f;  // Min DC bus voltage (V)
     udcmax = 410.0f;  // Max DC bus voltage (V)

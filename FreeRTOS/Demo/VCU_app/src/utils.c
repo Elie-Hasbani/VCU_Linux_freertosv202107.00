@@ -94,14 +94,14 @@ float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t
     float finalSpnt;
     int speed = motorState->speed;
 
-    if (speed < ThrotRampRpm)
+    if (speed < throtRampRpm)
     {
-        throttleRamp = ThrotRamp;
+        actualThrottleRamp = throtRamp;
     }
 
     else
     {
-        throttleRamp = ThrotRampMax;
+        actualThrottleRamp = throtRampMax;
     }
 
     finalSpnt = GetUserThrottleCommand(motorState);
@@ -112,10 +112,10 @@ float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t
 
     if (TemperatureDerate(globalState, &finalSpnt))
     {
-        console_print("derating becouse of temprature");
+        console_print("derating becouse of temprature\n");
     }
 
-    // finalSpnt = RampThrottle(finalSpnt);
+    finalSpnt = RampThrottle(finalSpnt);
 
     // make sure the torque percentage is NEVER out of range
     if (finalSpnt < -100.0f)

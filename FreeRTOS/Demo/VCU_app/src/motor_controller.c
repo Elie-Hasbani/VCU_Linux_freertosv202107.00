@@ -42,6 +42,7 @@ void MotorController(void *pvParameters)
         {
             console_print("Failed to receive from queue\n");
         }
+        console_print("\n\n");
         // xTaskDelayUntil(&lastWakeUp, pdMS_TO_TICKS(1000));
     }
 }
