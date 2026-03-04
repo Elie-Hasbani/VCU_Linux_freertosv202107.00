@@ -15,7 +15,7 @@ MotorControlState_t motorState = {0};
 
 void MotorController(void *pvParameters)
 {
-    TickType_t lastWakeUp = xTaskGetTickCount();
+    TickType_t timeNow = xTaskGetTickCount();
     motorState.speed = 0;
     motorState.direction = 1; // forward
     motorState.brakePedalPressed = false;
@@ -35,7 +35,8 @@ void MotorController(void *pvParameters)
         {
             console_print("Received from queue: id=%lu, timestamp=%lu\n", msg.id, msg.timestamp);
             // float throttle = GetUserThrottleCommand(&motorState);
-            float throttle = ProcessThrottle(&motorState, globalState);
+            TickType_t timeNow = xTaskGetTickCount();
+            float throttle = ProcessThrottle(&motorState, globalState, timeNow);
             console_print("Calculated throttle command: %f\n", throttle);
         }
         else
@@ -43,6 +44,6 @@ void MotorController(void *pvParameters)
             console_print("Failed to receive from queue\n");
         }
         console_print("\n\n");
-        // xTaskDelayUntil(&lastWakeUp, pdMS_TO_TICKS(1000));
+        // xTaskDelayUntil(&timeNow, pdMS_TO_TICKS(1000));
     }
 }

@@ -9,7 +9,7 @@ typedef struct
     uint32_t id;
     uint32_t data;
     uint8_t length;
-    uint32_t timestamp;
+    TickType_t timestamp;
 
 } CanMessage_t;
 
@@ -22,7 +22,9 @@ typedef struct
     CanMessage_t appsValues[2];
 
     bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
-    bool direction;         // true for forward, false for reverse
+    TickType_t lastCheckedBreakPedal;
+
+    bool direction; // true for forward, false for reverse
 
 } MotorControlState_t;
 
