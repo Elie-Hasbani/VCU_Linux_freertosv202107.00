@@ -40,7 +40,7 @@ typedef struct
 // Tasks parameters
 typedef struct
 {
-    GlobalState_t *globalState
+    GlobalState_t *globalState;
 } MotorControllerParams_t;
 
 #endif // STRUCTS_H
