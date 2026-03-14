@@ -12,7 +12,7 @@
 #include "console.h"
 
 #include "canRX.h"
-#include "motor_controller.h"
+#include "TaskMotorController.h"
 #include "queue_handles.h"
 #include "VCU.h"
 #include "throttle.h"
@@ -37,7 +37,7 @@ void MainApp(void)
         NULL);
 
     xTaskCreate(
-        MotorController,
+        TaskMotorController,
         "MOTOR_CONTROLLER",
         configMINIMAL_STACK_SIZE,
         &motorControllerParams,

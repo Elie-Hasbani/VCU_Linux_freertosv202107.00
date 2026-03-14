@@ -6,14 +6,14 @@
 #include "structs.h"
 
 #include "console.h"
-#include "motor_controller.h"
+#include "TaskMotorController.h"
 #include "queue_handles.h"
 
 #include "utils.h"
 
 MotorControlState_t motorState = {0};
 
-void MotorController(void *pvParameters)
+void TaskMotorController(void *pvParameters)
 {
     TickType_t timeNow = xTaskGetTickCount();
     motorState.speed = 0;
