@@ -1,4 +1,5 @@
 
+#include "FreeRTOS.h"
 
 float GetUserThrottleCommand(const MotorControlState_t *motorState);
 float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t *globalState, TickType_t time_now);

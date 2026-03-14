@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include "FreeRTOS.h"
 
 #ifndef STRUCTS_H
 #define STRUCTS_H
