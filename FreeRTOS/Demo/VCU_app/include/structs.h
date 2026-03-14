@@ -30,6 +30,14 @@ typedef struct
 
 typedef struct
 {
+    CanMessage_t motorTemp;
+    CanMessage_t inverterTemp;
+    CanMessage_t Voltage;
+
+} TempratureVoltageState_t;
+
+typedef struct
+{
     uint16_t derateReason;
 } GlobalState_t;
 

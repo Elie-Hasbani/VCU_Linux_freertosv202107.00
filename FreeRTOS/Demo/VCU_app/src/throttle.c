@@ -123,14 +123,16 @@ float NormalizeThrottle(int potval, int potIdx)
  * After the previous range checks, the throttle input potval lies within the
  * range of [potmin[0], potmax[0]]. From this range, the input is converted to
  * a percent range of [-100.0, 100.0].
+ *
+ * Prerequisit: potval in range.
 
  *
  * TODO: No regen implemented. Commanding 0 throttle while braking, otherwise direct output.
  *
- * @param potval
+ * @param potVal throttle input between potmin and potmax
  * @param idx Index of the throttle input that should be used for calculation.
- * @param brkpedal Brake pedal input (true for brake pedal pressed, false otherwise).
- * @return float
+ * @param motorControlState struct containing all nessasry data for throttle calculation
+ * @return float, value of throttle command between -100.0 and 100.0
  */
 float CalcThrottle(const MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx) /*int potval, int potIdx, bool brkpedal*/
 {
@@ -205,30 +207,6 @@ float CalcThrottle(const MotorControlState_t *motorControlState, int processedPo
         potnom = (potnom - throtdead) * (100.0f / (100.0f - throtdead));
     }
 
-    //!! pedal command intent coding
-
-    /*PedalPos = potnom; //save comparison next time to check if pedal had moved
-
-    float TempAvgPos = AveragePos(PedalPos); //get an rolling average pedal position over the last 50 measurements for smoothing
-
-    PedalChange = PedalPos - TempAvgPos; //current pedal position compared to average
-
-
-    if(PedalChange < -1.0 )//Check pedal is release compared to last time
-    {
-        PedalReq = -1; //pedal is released enough - Commanding regen or slowing
-    }
-    else if(PedalChange > 1.0 )//Check pedal is increased compared to last time
-    {
-        PedalReq = 1; //pedal pressed - Commanding accelerating - thus always more power
-    }
-    else//pedal not changed
-    {
-        potnom = TempAvgPos; //use the averaged pedal
-    }*/
-
-    // Do clever bits for regen and such.
-
     if (speed < 100 || speed < regenendRpm) // No regen under 100 rpm or speed under regenendRpm
     {
         regenlim = 0;
@@ -254,6 +232,20 @@ float CalcThrottle(const MotorControlState_t *motorControlState, int processedPo
     LastPedalPos = PedalPos; // Save current pedal position for next loop. //inutilisé
     return potnom;
 }
+
+/**
+ * @brief limits the throttle command if speed is too high
+ *
+ *
+ * Prerequisit: potval in range.
+
+ *
+ * TODO: No regen implemented. Commanding 0 throttle while braking, otherwise direct output.
+ *
+ * @param finalSpnt calculated throttle between -100.0 ans 100.0
+ * @param speed the current speed of the vehicule (taken from MotorState)
+ * @return float, value of throttle command between -100.0 and 100.0
+ */
 
 void SpeedLimitCommand(float *finalSpnt, int speed)
 {

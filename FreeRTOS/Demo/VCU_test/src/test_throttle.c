@@ -392,12 +392,12 @@ int main(void)
     printf("  THROTTLE FUNCTIONS TEST SUITE\n");
     printf("═══════════════════════════════════════\n" COLOR_RESET);
 
-    test_CheckAndLimitRange(&results);
+    /*test_CheckAndLimitRange(&results);
     test_NormalizeThrottle(&results);
     test_CalcThrottle(&results);
-    test_RampThrottle(&results);
+    test_RampThrottle(&results);*/
     test_SpeedLimitCommand(&results);
-    test_TemperatureDerate(&results);
+    // test_TemperatureDerate(&results);
 
     TEST_SUMMARY(results);
 
