@@ -11,7 +11,7 @@
 
 #include "console.h"
 
-#include "canRX.h"
+#include "TaskCanRX.h"
 #include "TaskMotorController.h"
 #include "queue_handles.h"
 #include "VCU.h"

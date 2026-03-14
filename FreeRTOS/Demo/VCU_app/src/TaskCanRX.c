@@ -5,7 +5,7 @@
 #include "structs.h"
 
 #include "console.h"
-#include "canRX.h"
+#include "TaskCanRX.h"
 #include "queue_handles.h"
 void TaskCanRx(void *pvParameters)
 {
