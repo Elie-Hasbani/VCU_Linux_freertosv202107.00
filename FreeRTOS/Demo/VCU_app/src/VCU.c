@@ -16,6 +16,8 @@
 #include "VCU.h"
 #include "throttle.h"
 #include "utils.h"
+#include "TaskCanTx.h"
+#include "TaskTmpVltMngr.h"
 
 void MainApp(void)
 {
@@ -32,6 +34,8 @@ void MainApp(void)
 
     MotorControllerParams_t motorControllerParams = {&globalState, &xMotorControllerQueue, &xIHMQueue, &xCanTxQueue};
     CanRxParams_t canRxParams = {&xTemperatureVoltageQueue, &xMotorControllerQueue};
+    CanTxParam_t canTxParams = {&xCanTxQueue};
+    TmpVltMngrParams_t tmpVltMngrParams = {&globalState, &xTemperatureVoltageQueue, &xIHMQueue};
     xTaskCreate(
         TaskCanRx,
         "CAN_RX",
@@ -45,6 +49,22 @@ void MainApp(void)
         "MOTOR_CONTROLLER",
         configMINIMAL_STACK_SIZE,
         &motorControllerParams,
+        tskIDLE_PRIORITY,
+        NULL);
+
+    xTaskCreate(
+        TaskCanTx,
+        "CAN_TX",
+        configMINIMAL_STACK_SIZE,
+        &canTxParams,
+        tskIDLE_PRIORITY,
+        NULL);
+
+    xTaskCreate(
+        TaskTmpVltMngr,
+        "TMP_VLT_MNGR",
+        configMINIMAL_STACK_SIZE,
+        &tmpVltMngrParams,
         tskIDLE_PRIORITY,
         NULL);
 

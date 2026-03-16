@@ -32,6 +32,7 @@ void TaskMotorController(void *pvParameters)
         // console_print((ledState = !ledState) ? "Led2 ON\n" : "Led2 OFF\n");
         CanMessage_t msg = {0};
         BaseType_t xReturn = xQueueReceive(*xMotorControllerQueue, &msg, pdMS_TO_TICKS(500));
+        console_print("------MotorController------\n");
 
         if (xReturn == pdPASS)
         {
@@ -74,10 +75,12 @@ void TaskMotorController(void *pvParameters)
                 .timestamp = xTaskGetTickCount()
 
             };
+
+            xQueueSend(*xCanTxQueue, &throttleMsg, portMAX_DELAY);
             console_print("Calculated throttle command: %f\n", throttle);
         }
 
-        console_print("\n\n");
+        console_print("------MotorController------\n\n");
         motorState.lastCallTimeStmp = xTaskGetTickCount();
 
         // xTaskDelayUntil(&timeNow, pdMS_TO_TICKS(1000));

@@ -38,6 +38,8 @@ typedef struct
     CanMessage_t inverterTemp;
     CanMessage_t Voltage;
 
+    TickType_t lastCallTimeStmp;
+
 } TempratureVoltageState_t;
 
 typedef enum Order
@@ -80,4 +82,15 @@ typedef struct
     QueueHandle_t *xMotorControllerQueue;
 } CanRxParams_t;
 
+typedef struct
+{
+    QueueHandle_t *xCanTxQueue;
+} CanTxParam_t;
+
+typedef struct
+{
+    GlobalState_t *globalState;
+    QueueHandle_t *xTemperatureVoltageQueue;
+    QueueHandle_t *IHMQueue;
+} TmpVltMngrParams_t;
 #endif // STRUCTS_H

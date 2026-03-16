@@ -200,3 +200,7 @@ float checkMessageTimeStamps(const MotorControlState_t *motorState, GlobalState_
         globalState->derateReason |= DERATE_BREAK_OUTDATED;
     }
 }
+
+void RegulateTemprature(GlobalState_t *globalState, TempratureVoltageState_t tempVltState)
+{
+}
