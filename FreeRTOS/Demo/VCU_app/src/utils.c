@@ -201,6 +201,81 @@ float checkMessageTimeStamps(const MotorControlState_t *motorState, GlobalState_
     }
 }
 
-void RegulateTemprature(GlobalState_t *globalState, TempratureVoltageState_t tempVltState)
+void RegulateTemprature(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState)
 {
+    // Example regulation logic based on temperature thresholds
+    int motorTemp = tempVltState->motorTemp.data;
+    int inverterTemp = tempVltState->inverterTemp.data;
+    int voltage = tempVltState->Voltage.data;
+
+    regulateMotorTemperature(globalState, tempVltState, motorTemp);
+    regulateInverterTemperature(globalState, tempVltState, inverterTemp);
+
+    // Similar checks can be added for inverterTemp and voltage if needed
+}
+
+void regulateMotorTemperature(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState, int motorTemp)
+{
+    if (motorTemp > 100) // High motor temperature threshold
+    {
+        if (globalState->derateReason & DERATE_MOTOR_HIGHTEMP == 0)
+        {
+            tempVltState->motorTempChanged = true;
+            tempVltState->fansOrder = true;
+        }
+
+        globalState->derateReason |= DERATE_MOTOR_HIGHTEMP;
+    }
+    else
+    {
+        if (globalState->derateReason & DERATE_MOTOR_HIGHTEMP)
+        {
+            tempVltState->motorTempChanged = true;
+            tempVltState->fansOrder = false;
+        }
+        globalState->derateReason &= ~DERATE_MOTOR_HIGHTEMP;
+    }
+
+    if (motorTemp > 120) // Over motor temperature threshold
+    {
+
+        globalState->derateReason |= DERATE_MOTOR_OVERTEMP; // we don't activate fans here because overtemp => hightemp
+    }
+    else
+    {
+        globalState->derateReason &= ~DERATE_MOTOR_OVERTEMP; // we don't activate or deactivate fans beause the car might be in high temp but not overtemp
+    }
+}
+
+void regulateInverterTemp(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState, int inverterTemp)
+{
+    if (inverterTemp > 100) // High inverter temperature threshold
+    {
+        if (globalState->derateReason & DERATE_INVERTER_HIGHTEMP == 0)
+        {
+            tempVltState->inverterTempChanged = true;
+            tempVltState->pumpsOrder = true;
+        }
+
+        globalState->derateReason |= DERATE_INVERTER_HIGHTEMP;
+    }
+    else
+    {
+        if (globalState->derateReason & DERATE_INVERTER_HIGHTEMP)
+        {
+            tempVltState->inverterTempChanged = true;
+            tempVltState->pumpsOrder = false;
+        }
+        globalState->derateReason &= ~DERATE_INVERTER_HIGHTEMP;
+    }
+
+    if (inverterTemp > 120) // Over inverter temperature threshold
+    {
+
+        globalState->derateReason |= DERATE_INVERTER_OVERTEMP; // we don't activate fans here because overtemp => hightemp
+    }
+    else
+    {
+        globalState->derateReason &= ~DERATE_INVERTER_OVERTEMP; // we don't activate or deactivate pumps beause car might be in high temp but not overtemp
+    }
 }

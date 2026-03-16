@@ -267,8 +267,8 @@ bool TemperatureDerate(const GlobalState_t *globalState, float *finalSpnt)
 {
     uint16_t DerateReason = globalState->derateReason;
     float limit = 0;
-    bool tempHigh = DerateReason & DERATE_HIGHTEMP; // tempMax + 2.0f(defined in monitor Temprature Task)
-    bool overTemp = DerateReason & DERATE_OVERTEMP;
+    bool tempHigh = DerateReason & (DERATE_MOTOR_HIGHTEMP | DERATE_INVERTER_HIGHTEMP); // tempMax + 2.0f(defined in monitor Temprature Task)
+    bool overTemp = DerateReason & (DERATE_MOTOR_OVERTEMP | DERATE_INVERTER_OVERTEMP);
 
     if (!tempHigh && !overTemp) // temperature low, allow full request
     {

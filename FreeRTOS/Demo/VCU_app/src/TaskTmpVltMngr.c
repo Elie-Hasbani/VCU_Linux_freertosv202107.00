@@ -52,7 +52,22 @@ void TaskTmpVltMngr(void *pvParameters)
 
         if (tempState.lastCallTimeStmp - xTaskGetTickCount() > pdMS_TO_TICKS(5))
         {
-            RegulateTemprature(globalState, tempState);
+            RegulateTemprature(globalState, &tempState);
+            if (tempState.motorTempChanged)
+            {
+                IHMOrder_t order = {CoolingPump, tempState.pumpsOrder};
+                xQueueSend(*xIHMQueue, &order, portMAX_DELAY);
+                console_print("Motor temp changed, sending order to IHM: %s\n", tempState.pumpsOrder ? "ON" : "OFF");
+            }
+
+            if (tempState.inverterTempChanged)
+            {
+                IHMOrder_t order = {CoolingFans, tempState.fansOrder};
+                xQueueSend(*xIHMQueue, &order, portMAX_DELAY);
+                console_print("Inverter temp changed, sending order to IHM: %s\n", tempState.fansOrder ? "ON" : "OFF");
+            }
+            tempState.motorTempChanged = false;
+            tempState.inverterTempChanged = false;
         }
 
         console_print("------TempVltController------\n\n");

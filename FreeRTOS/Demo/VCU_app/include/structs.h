@@ -40,6 +40,12 @@ typedef struct
 
     TickType_t lastCallTimeStmp;
 
+    bool inverterTempChanged;
+    bool fansOrder;
+
+    bool motorTempChanged;
+    bool pumpsOrder;
+
 } TempratureVoltageState_t;
 
 typedef enum Order
@@ -92,5 +98,6 @@ typedef struct
     GlobalState_t *globalState;
     QueueHandle_t *xTemperatureVoltageQueue;
     QueueHandle_t *IHMQueue;
+
 } TmpVltMngrParams_t;
 #endif // STRUCTS_H
