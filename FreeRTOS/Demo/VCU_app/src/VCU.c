@@ -13,26 +13,30 @@
 
 #include "TaskCanRX.h"
 #include "TaskMotorController.h"
-#include "queue_handles.h"
 #include "VCU.h"
 #include "throttle.h"
 #include "utils.h"
 
 void MainApp(void)
 {
-    xMainQueue = xQueueCreate(10, sizeof(CanMessage_t));
-    xQueue2 = xQueueCreate(10, sizeof(unsigned long));
+
+    QueueHandle_t xMotorControllerQueue = xQueueCreate(10, sizeof(CanMessage_t));
+    QueueHandle_t xTemperatureVoltageQueue = xQueueCreate(10, sizeof(CanMessage_t));
+    QueueHandle_t xIHMQueue = xQueueCreate(10, sizeof(IHMOrder_t));
+    QueueHandle_t xCanTxQueue = xQueueCreate(10, sizeof(CanMessage_t));
+
     initThrottleValues();
     // GetUserThrottleCommand();
 
     GlobalState_t globalState = {1};
 
-    MotorControllerParams_t motorControllerParams = {&globalState};
+    MotorControllerParams_t motorControllerParams = {&globalState, &xMotorControllerQueue, &xIHMQueue, &xCanTxQueue};
+    CanRxParams_t canRxParams = {&xTemperatureVoltageQueue, &xMotorControllerQueue};
     xTaskCreate(
         TaskCanRx,
         "CAN_RX",
         configMINIMAL_STACK_SIZE,
-        NULL,
+        &canRxParams,
         tskIDLE_PRIORITY,
         NULL);
 

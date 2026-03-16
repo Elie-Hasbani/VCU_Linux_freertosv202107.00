@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "FreeRTOS.h"
+#include "queue.h"
 
 #ifndef STRUCTS_H
 #define STRUCTS_H
@@ -25,6 +26,8 @@ typedef struct
     bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
     TickType_t lastCheckedBreakPedal;
 
+    TickType_t lastCallTimeStmp;
+
     bool direction; // true for forward, false for reverse
 
 } MotorControlState_t;
@@ -36,6 +39,22 @@ typedef struct
     CanMessage_t Voltage;
 
 } TempratureVoltageState_t;
+
+typedef enum Order
+{
+    FaultLight = 0,
+    CoolingPump = 1,
+    CoolingFans = 2,
+    R2Dbuzzer = 3,
+
+} Order_t;
+
+typedef struct
+{
+    Order_t order;
+    bool state;
+
+} IHMOrder_t;
 
 typedef struct
 {
@@ -50,6 +69,15 @@ typedef struct
 typedef struct
 {
     GlobalState_t *globalState;
+    QueueHandle_t *xMotorControllerQueue;
+    QueueHandle_t *IHMQueue;
+    QueueHandle_t *xCanTxQueue;
 } MotorControllerParams_t;
+
+typedef struct
+{
+    QueueHandle_t *xTemperatureVoltageQueue;
+    QueueHandle_t *xMotorControllerQueue;
+} CanRxParams_t;
 
 #endif // STRUCTS_H
