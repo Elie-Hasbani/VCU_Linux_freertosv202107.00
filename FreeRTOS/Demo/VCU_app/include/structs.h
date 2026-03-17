@@ -8,8 +8,8 @@
 
 typedef struct
 {
-    uint32_t id;
-    uint32_t data;
+    uint8_t id;
+    int32_t data;
     uint8_t length;
     TickType_t timestamp;
 
@@ -17,8 +17,8 @@ typedef struct
 
 typedef struct
 {
-    uint32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
-    uint32_t speed;           // calculated speed
+    int32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
+    uint32_t speed;          // calculated speed
 
     CanMessage_t wheelSpeeds[4];
     CanMessage_t appsValues[2];

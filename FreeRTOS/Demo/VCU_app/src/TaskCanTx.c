@@ -6,6 +6,7 @@
 
 #include "console.h"
 #include "TaskCanTx.h"
+#include "my_fp.h"
 
 void TaskCanTx(void *pvParameters)
 {
@@ -24,11 +25,18 @@ void TaskCanTx(void *pvParameters)
 
         CanMessage_t msg = {0};
         BaseType_t xReturn = xQueueReceive(*xCanTxQueue, &msg, portMAX_DELAY);
-        console_print("------CanTX------\n");
+        console_print("(B)------CanTX------\n");
         if (xReturn == pdPASS)
         {
-            console_print("sending Throttle Order = %d to inverter\n", msg.data);
+
+            switch (msg.id)
+            {
+            case 0x50:
+                float throttle = FP_TOFLOAT(msg.data);
+                console_print("sending Throttle Order = %f to inverter\n", throttle);
+                break;
+            }
         }
-        console_print("------CanTX------\n\n");
+        console_print("(E)------CanTX------\n\n");
     }
 }

@@ -13,6 +13,8 @@
 void TaskTmpVltMngr(void *pvParameters)
 {
     TempratureVoltageState_t tempState = {0};
+    tempState.inverterTempChanged = false;
+    tempState.motorTempChanged = false;
 
     TickType_t timeNow = xTaskGetTickCount();
 
@@ -26,19 +28,19 @@ void TaskTmpVltMngr(void *pvParameters)
         // console_print((ledState = !ledState) ? "Led2 ON\n" : "Led2 OFF\n");
         CanMessage_t msg = {0};
         BaseType_t xReturn = xQueueReceive(*xTemperatureVoltageQueue, &msg, pdMS_TO_TICKS(500));
-        console_print("------TempVltController------\n");
+        console_print("------(B)TempVltController------\n");
 
         if (xReturn == pdPASS)
         {
             switch (msg.id)
             {
-            case 0x100: // Wheel1 speed message
+            case 0x40: // motor temp
                 tempState.motorTemp = msg;
                 break;
-            case 0x101: // Wheel2 speed message
+            case 0x41: // inverter temp
                 tempState.inverterTemp = msg;
                 break;
-            case 0x102: // Wheel3 speed message
+            case 0x42: // voltage message
                 tempState.Voltage = msg;
                 break;
             }
@@ -70,7 +72,7 @@ void TaskTmpVltMngr(void *pvParameters)
             tempState.inverterTempChanged = false;
         }
 
-        console_print("------TempVltController------\n\n");
+        console_print("------(E)TempVltController------\n\n");
         tempState.lastCallTimeStmp = xTaskGetTickCount();
 
         // xTaskDelayUntil(&timeNow, pdMS_TO_TICKS(1000));

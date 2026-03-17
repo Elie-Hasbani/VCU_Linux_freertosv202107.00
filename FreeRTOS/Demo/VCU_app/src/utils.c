@@ -22,8 +22,6 @@ float GetUserThrottleCommand(const MotorControlState_t *motorState)
     int pot1val = motorState->appsValues[0].data; // Param::GetInt(Param::pot);
     int pot2val = motorState->appsValues[1].data; // Param::GetInt(Param::pot2);
 
-    console_print("potval1 = %d potval2 = %d\n", pot1val, pot2val);
-
     bool inRange1 = CheckAndLimitRange(&pot1val, 0);
     bool inRange2 = CheckAndLimitRange(&pot2val, 1);
     int useChannel = 0; // default case: use Throttle 1
@@ -247,7 +245,7 @@ void regulateMotorTemperature(GlobalState_t *globalState, TempratureVoltageState
     }
 }
 
-void regulateInverterTemp(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState, int inverterTemp)
+void regulateInverterTemperature(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState, int inverterTemp)
 {
     if (inverterTemp > 100) // High inverter temperature threshold
     {

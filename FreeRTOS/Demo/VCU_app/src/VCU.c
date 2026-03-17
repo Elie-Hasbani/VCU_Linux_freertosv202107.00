@@ -19,6 +19,9 @@
 #include "TaskCanTx.h"
 #include "TaskTmpVltMngr.h"
 
+// test
+#include "EmulatorCanRX.h"
+
 void MainApp(void)
 {
 
@@ -30,15 +33,23 @@ void MainApp(void)
     initThrottleValues();
     // GetUserThrottleCommand();
 
-    GlobalState_t globalState = {1};
+    GlobalState_t globalState = {0};
 
     MotorControllerParams_t motorControllerParams = {&globalState, &xMotorControllerQueue, &xIHMQueue, &xCanTxQueue};
     CanRxParams_t canRxParams = {&xTemperatureVoltageQueue, &xMotorControllerQueue};
     CanTxParam_t canTxParams = {&xCanTxQueue};
     TmpVltMngrParams_t tmpVltMngrParams = {&globalState, &xTemperatureVoltageQueue, &xIHMQueue};
-    xTaskCreate(
+    /*xTaskCreate(
         TaskCanRx,
         "CAN_RX",
+        configMINIMAL_STACK_SIZE,
+        &canRxParams,
+        tskIDLE_PRIORITY,
+        NULL);*/
+
+    xTaskCreate(
+        EmulatorCanRx,
+        "EmultorCanRx",
         configMINIMAL_STACK_SIZE,
         &canRxParams,
         tskIDLE_PRIORITY,
