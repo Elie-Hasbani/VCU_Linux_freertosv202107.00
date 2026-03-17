@@ -10,6 +10,7 @@
 
 #include "utils.h"
 #include "my_fp.h"
+#include "project_config.h"
 
 void PrintMotorControllerState(const MotorControlState_t *motorState);
 
@@ -42,22 +43,22 @@ void TaskMotorController(void *pvParameters)
         {
             switch (msg.id)
             {
-            case 0x20: // Wheel1 speed message
+            case wheel1Id: // Wheel1 speed message
                 motorState.wheelSpeeds[0] = msg;
                 break;
-            case 0x21: // Wheel2 speed message
+            case wheel2Id: // Wheel2 speed message
                 motorState.wheelSpeeds[1] = msg;
                 break;
-            case 0x22: // Wheel3 speed message
+            case wheel3Id: // Wheel3 speed message
                 motorState.wheelSpeeds[2] = msg;
                 break;
-            case 0x23: // Wheel4 speed message
+            case wheel4Id: // Wheel4 speed message
                 motorState.wheelSpeeds[3] = msg;
                 break;
-            case 0x30: // APPS1 value
+            case apps1Id: // APPS1 value
                 motorState.appsValues[0] = msg;
                 break;
-            case 0x31: // APPS2 value
+            case apps2Id: // APPS2 value
                 motorState.appsValues[1] = msg;
                 break;
             }

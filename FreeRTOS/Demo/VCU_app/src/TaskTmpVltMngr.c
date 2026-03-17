@@ -9,6 +9,7 @@
 #include "TaskTmpVltMngr.h"
 
 #include "utils.h"
+#include "project_config.h"
 
 void TaskTmpVltMngr(void *pvParameters)
 {
@@ -30,26 +31,22 @@ void TaskTmpVltMngr(void *pvParameters)
         BaseType_t xReturn = xQueueReceive(*xTemperatureVoltageQueue, &msg, pdMS_TO_TICKS(500));
         console_print("------(B)TempVltController------\n");
 
-        if (xReturn == pdPASS)
+        while ((xQueueReceive(*xTemperatureVoltageQueue, &msg, pdMS_TO_TICKS(100))) == pdPASS)
         {
             switch (msg.id)
             {
-            case 0x40: // motor temp
+            case motor_tempId: // motor temp
                 tempState.motorTemp = msg;
                 break;
-            case 0x41: // inverter temp
+            case inverter_tempId: // inverter temp
                 tempState.inverterTemp = msg;
                 break;
-            case 0x42: // voltage message
+            case voltageId: // voltage message
                 tempState.Voltage = msg;
                 break;
             }
 
             console_print("Received from queue: id=%lu, timestamp=%lu\n", msg.id, msg.timestamp);
-        }
-        else
-        {
-            console_print("Failed to receive from queue\n");
         }
 
         if (tempState.lastCallTimeStmp - xTaskGetTickCount() > pdMS_TO_TICKS(5))

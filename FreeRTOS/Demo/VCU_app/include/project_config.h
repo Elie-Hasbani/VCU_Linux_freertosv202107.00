@@ -10,3 +10,21 @@
 #define DERATE_MOTOR_TEMP_OUTDATED (1U << 12)
 #define DERATE_MOTOR_HIGHTEMP (1U << 13)
 #define DERATE_MOTOR_OVERTEMP (1U << 14)
+
+typedef enum canIds
+{
+    wheel1Id = 0x20,
+    wheel2Id = 0x21,
+    wheel3Id = 0x22,
+    wheel4Id = 0x23,
+
+    apps1Id = 0x30,
+    apps2Id = 0x31,
+
+    motor_tempId = 0x40,
+    inverter_tempId = 0x41,
+    voltageId = 0x42,
+
+    throtle_cmdId = 0x80
+
+} CanIds;
