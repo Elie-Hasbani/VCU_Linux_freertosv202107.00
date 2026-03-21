@@ -45,7 +45,9 @@ float GetUserThrottleCommand(const MotorControlState_t *motorState)
             if (pot1nomTmp < pot2nomTmp)
             {
                 if (pot1nomTmp > 50.0f)
+                {
                     pot1val = potmax[0] / 2;
+                }
 
                 useChannel = 0;
             }

@@ -12,9 +12,11 @@ INC_DIR = include
 BUILD_DIR = build
 VCU_SRC = ../VCU_app/src
 VCU_INC = ../VCU_app/include
+FREERTOS_INC = ../../Source/include
+FREERTOS_PORTABLE_INC = ../../Source/portable/ThirdParty/GCC
 
 # Include paths (test includes first to override original headers)
-INCLUDES = -I$(INC_DIR) -I$(VCU_INC)
+INCLUDES = -I$(INC_DIR) -I$(VCU_INC) -I$(FREERTOS_INC) -I$(FREERTOS_PORTABLE_INC)
 
 # Source files
 TEST_HELPERS = $(SRC_DIR)/test_helpers.c

@@ -6,6 +6,8 @@
 
 // Include throttle functions from main project
 #include "../../VCU_app/include/throttle.h"
+#include "../../VCU_app/include/utils.h"
+
 #include "../../VCU_app/include/my_math.h"
 
 // External variables that need to be initialized for throttle tests
@@ -353,30 +355,87 @@ void test_TemperatureDerate(TestResults_t *tests)
     TEST_ASSERT_FLOAT_EQUAL(80.0f, throttle, 0.1f, "Normal temp should not change throttle");
 
     // Test 2: High temperature (50% derate)
-    globalState.derateReason = DERATE_HIGHTEMP;
+    globalState.derateReason = DERATE_MOTOR_HIGHTEMP;
     throttle = 80.0f;
     derated = TemperatureDerate(&globalState, &throttle);
     TEST_ASSERT(derated == true, "High temp should derate");
     TEST_ASSERT_FLOAT_EQUAL(50.0f, throttle, 0.1f, "High temp should limit to 50%");
 
     // Test 3: Over temperature (full derate)
-    globalState.derateReason = DERATE_OVERTEMP;
+    globalState.derateReason = DERATE_MOTOR_OVERTEMP;
     throttle = 80.0f;
     derated = TemperatureDerate(&globalState, &throttle);
     TEST_ASSERT(derated == true, "Over temp should derate");
     TEST_ASSERT_FLOAT_EQUAL(0.0f, throttle, 0.1f, "Over temp should limit to 0%");
 
     // Test 4: Both high and over temp (full derate)
-    globalState.derateReason = DERATE_HIGHTEMP | DERATE_OVERTEMP;
+    globalState.derateReason = DERATE_MOTOR_HIGHTEMP | DERATE_MOTOR_OVERTEMP;
     throttle = 80.0f;
     derated = TemperatureDerate(&globalState, &throttle);
     TEST_ASSERT_FLOAT_EQUAL(0.0f, throttle, 0.1f, "Both flags should result in 0%");
 
     // Test 5: Negative throttle with high temp
-    globalState.derateReason = DERATE_HIGHTEMP;
+    globalState.derateReason = DERATE_MOTOR_HIGHTEMP;
     throttle = -40.0f;
     TemperatureDerate(&globalState, &throttle);
     TEST_ASSERT(throttle >= -50.0f, "Negative throttle should also be limited");
+}
+
+void test_inline_helpers(TestResults_t *tests)
+{
+    TEST_SECTION("Testing Inline Helper Functions");
+
+    // Test change() function
+    int result = change(50, 0, 100, 0, 200);
+    TEST_ASSERT_EQUAL(100, result, "change(50, 0, 100, 0, 200) should be 100");
+
+    result = change(0, 0, 100, 0, 200);
+    TEST_ASSERT_EQUAL(0, result, "change at min should map to out_min");
+
+    result = change(100, 0, 100, 0, 200);
+    TEST_ASSERT_EQUAL(200, result, "change at max should map to out_max");
+
+    result = change(25, 0, 100, 100, 200);
+    TEST_ASSERT_EQUAL(125, result, "change should work with offset output");
+
+    result = change(50, 0, 100, -200, 200);
+    TEST_ASSERT_EQUAL(0, result, "change should work with negative ranges");
+
+    result = change(25, 0, 100, 0, -50);
+    TEST_ASSERT_EQUAL(-12, result, "change should work with negative ranges-2");
+
+    // Test changeFloat() function
+    float fresult = changeFloat(50.0f, 0.0f, 100.0f, 0.0f, 200.0f);
+    TEST_ASSERT_FLOAT_EQUAL(100.0f, fresult, 0.1f,
+                            "changeFloat(50, 0, 100, 0, 200) should be 100");
+
+    fresult = changeFloat(0.0f, 0.0f, 100.0f, 0.0f, 200.0f);
+    TEST_ASSERT_FLOAT_EQUAL(0.0f, fresult, 0.1f,
+                            "changeFloat at min should map to out_min");
+
+    fresult = changeFloat(100.0f, 0.0f, 100.0f, 0.0f, 200.0f);
+    TEST_ASSERT_FLOAT_EQUAL(200.0f, fresult, 0.1f,
+                            "changeFloat at max should map to out_max");
+
+    fresult = changeFloat(75.0f, 0.0f, 100.0f, -50.0f, 50.0f);
+    TEST_ASSERT_FLOAT_EQUAL(25.0f, fresult, 0.1f,
+                            "changeFloat should work with negative ranges");
+
+    fresult = changeFloat(25.0f, 0.0f, 100.0f, 0.0f, -50.0f);
+    TEST_ASSERT_FLOAT_EQUAL(-12.5f, fresult, 0.1f,
+                            "changeFloat should return float values");
+
+    fresult = changeFloat(35.0f, 10.0f, 110.0f, 0.0f, -50.0f);
+    TEST_ASSERT_FLOAT_EQUAL(-12.5f, fresult, 0.1f,
+                            "changeFloat should return float values-2");
+
+    fresult = changeFloat(75.0f, 0.0f, 100.0f, -50.0f, 100.0f);
+    TEST_ASSERT_FLOAT_EQUAL(-12.5f, fresult, 0.1f,
+                            "changeFloat should return float values-2");
+
+    fresult = changeFloat(95.0f, 0.0f, 100.0f, -60.0f, 100.0f);
+    TEST_ASSERT_FLOAT_EQUAL(-12.5f, fresult, 0.1f,
+                            "changeFloat should return float values-2");
 }
 
 /**
@@ -384,6 +443,7 @@ void test_TemperatureDerate(TestResults_t *tests)
  */
 int main(void)
 {
+
     TestResults_t results;
     init_test_results(&results);
 
@@ -392,13 +452,13 @@ int main(void)
     printf("  THROTTLE FUNCTIONS TEST SUITE\n");
     printf("═══════════════════════════════════════\n" COLOR_RESET);
 
-    /*test_CheckAndLimitRange(&results);
-    test_NormalizeThrottle(&results);
+    // test_CheckAndLimitRange(&results);
+    // test_NormalizeThrottle(&results);
     test_CalcThrottle(&results);
-    test_RampThrottle(&results);*/
+    /*test_RampThrottle(&results);
     test_SpeedLimitCommand(&results);
-    // test_TemperatureDerate(&results);
-
+    test_TemperatureDerate(&results);
+    test_inline_helpers(&results);*/
     TEST_SUMMARY(results);
 
     return (results.failed == 0) ? 0 : 1;
