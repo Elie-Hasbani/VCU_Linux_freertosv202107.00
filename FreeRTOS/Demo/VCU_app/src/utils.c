@@ -13,97 +13,63 @@
 #define MAX_WHEEL_TIMEOUT 400
 #define MAX_BREAK_TIMEOUT 150
 
-float GetUserThrottleCommand(const MotorControlState_t *motorState)
+float GetUserThrottleCommand(int pot1val, int pot2val, int speed, bool brake)
 {
-    bool brake = motorState->brakePedalPressed; // Param::GetBool(Param::din_brake);
-    // int potmode = 0;    // Param::GetInt(Param::potmode);
-    int direction = 1; // Param::GetInt(Param::dir);
-
-    int pot1val = motorState->appsValues[0].data; // Param::GetInt(Param::pot);
-    int pot2val = motorState->appsValues[1].data; // Param::GetInt(Param::pot2);
 
     bool inRange1 = CheckAndLimitRange(&pot1val, 0);
     bool inRange2 = CheckAndLimitRange(&pot2val, 1);
-    int useChannel = 0; // default case: use Throttle 1
+
+    float pot1nom = NormalizeThrottle(pot1val, 0); ////normaliser pour avoir une valeure entre 0 et 100% en fonction de potmin
+    float pot2nom = NormalizeThrottle(pot2val, 1); // et pot max
 
     // when there's something wrong with the dual throttle values,
     // we try to make the best of it and use the valid one
     if (inRange1 && inRange2)
     {
-        // These are only temporary values, because they can change
-        // if the "limp mode" is activated.
-        float pot1nomTmp = NormalizeThrottle(pot1val, 0); ////normaliser pour avoir une valeure entre 0 et 100% en fonction de potmin
-        float pot2nomTmp = NormalizeThrottle(pot2val, 1); // et pot max
 
-        if (ABS(pot2nomTmp - pot1nomTmp) > 10.0f) // si la difference est trop grande, on prend la valeure la plus petite, et si elle est trop grande
-        {                                         // on la met a 50%de potmax
+        if (ABS(pot2nom - pot1nom) > 10.0f) // si la difference est trop grande, on prend la valeure la plus petite, et si elle est trop grande
+        {                                   // on la met a 50%de potmax
             // utils::PostErrorIfRunning(ERR_THROTTLE12DIFF);
 
             // simple implementation of a limp mode: select the lower of
             // the two throttle inputs and limiting the throttle value
             // to 50%
-            if (pot1nomTmp < pot2nomTmp)
+            if (pot1nom < pot2nom)
             {
-                if (pot1nomTmp > 50.0f)
-                {
-                    pot1val = potmax[0] / 2;
-                }
-
-                useChannel = 0;
+                pot1nom = MIN(pot1nom, 50.0f);
+                return CalcThrottle(pot1nom, speed, brake);
             }
             else
             {
-                if (pot2nomTmp > 50.0f)
-                    pot2val = potmax[1] / 2;
-
-                useChannel = 1;
+                pot2nom = MIN(pot2nom, 50.0f);
+                return CalcThrottle(pot2nom, speed, brake);
             }
         }
     }
     else if (inRange1 && !inRange2)
     {
         // utils::PostErrorIfRunning(ERR_THROTTLE2);
-
-        useChannel = 0; // use throttle channel 1
+        pot1nom = MIN(pot1nom, 50.0f);
+        return CalcThrottle(pot1nom, speed, brake);
     }
     else if (!inRange1 && inRange2)
     {
         // utils::PostErrorIfRunning(ERR_THROTTLE1);
-
-        useChannel = 1; // use throttle channel 2
+        pot2nom = MIN(pot2nom, 50.0f);
+        return CalcThrottle(pot2nom, speed, brake);
     }
     else // !inRange1 && !inRange2
     {
         // utils::PostErrorIfRunning(ERR_THROTTLE12);
-
         return 0.0;
     }
-
-    // don't return a throttle value if we are in neutral
-    // TODO: the direction for FORWARD/NEUTRAL/REVERSE needs an enum in param_prj.h as well
-    if (direction == 0)
-        return 0.0;
-
-    if (direction == 2) // No throttle val if in PARK also.
-        return 0.0;
-
-    // calculate the throttle depending on the channel we've decided to use
-    if (useChannel == 0)
-        return CalcThrottle(motorState, pot1val, 0);
-    else if (useChannel == 1)
-        return CalcThrottle(motorState, pot2val, 1);
-    else
-        return 0.0;
 }
 
-float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t *globalState, TickType_t time_now)
+float ProcessThrottle(float finalSpnt, int speed, float motorTemp, float inverterTemp, float voltage)
 {
     // we claculate messageTimouts here to minimize the probability of a context switch that would make the time_now
     // not reliable. If Max timouts are big enough, that should not pose any problem.
-    float limitMsgTimeouts = checkMessageTimeStamps(motorState, globalState, time_now);
-
-    float finalSpnt;
-    int speed = motorState->speed;
+    // float limitMsgTimeouts = checkMessageTimeStamps(motorState, globalState, time_now);
 
     if (speed < throtRampRpm)
     {
@@ -114,15 +80,18 @@ float ProcessThrottle(const MotorControlState_t *motorState, const GlobalState_t
         actualThrottleRamp = throtRampMax;
     }
 
-    finalSpnt = GetUserThrottleCommand(motorState);
-
     // Throttle::UdcLimitCommand(finalSpnt,Variable             s::GetFloat(Variables::udc));
     // Throttle::IdcLimitCommand(finalSpnt, ABS(Variables::GetFloat(Variables::idc)));
     SpeedLimitCommand(&finalSpnt, ABS(speed));
 
-    if (TemperatureDerate(globalState, &finalSpnt))
+    if (TemperatureDerate(motorTemp, motorTempMax, &finalSpnt))
     {
-        console_print("derating becouse of temprature\n");
+        console_print("derating becouse of motor temprature\n");
+    }
+
+    if (TemperatureDerate(inverterTemp, inverterTempMax, &finalSpnt))
+    {
+        console_print("derating because of inverter temprature\n");
     }
 
     finalSpnt = RampThrottle(finalSpnt);
@@ -148,7 +117,7 @@ int calculateSpeed(const MotorControlState_t *motorState)
     return sum / 4;
 }
 
-float checkMessageTimeStamps(const MotorControlState_t *motorState, GlobalState_t *globalState, TickType_t time_now)
+/*float checkMessageTimeStamps(const MotorControlState_t *motorState, GlobalState_t *globalState, TickType_t time_now)
 {
     // on ne retourne pas tout de suite pour que si on change les limites, on ne soit pas obliger de changer le code.(on pourrait retourner dans)
     // l'ordre croissant des limites, mais si on changes->il faut changer la structure du code)
@@ -199,83 +168,4 @@ float checkMessageTimeStamps(const MotorControlState_t *motorState, GlobalState_
         limit = MIN(limit, 0);
         globalState->derateReason |= DERATE_BREAK_OUTDATED;
     }
-}
-
-void RegulateTemprature(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState)
-{
-    // Example regulation logic based on temperature thresholds
-    int motorTemp = tempVltState->motorTemp.data;
-    int inverterTemp = tempVltState->inverterTemp.data;
-    int voltage = tempVltState->Voltage.data;
-
-    regulateMotorTemperature(globalState, tempVltState, motorTemp);
-    regulateInverterTemperature(globalState, tempVltState, inverterTemp);
-
-    // Similar checks can be added for inverterTemp and voltage if needed
-}
-
-void regulateMotorTemperature(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState, int motorTemp)
-{
-    if (motorTemp > 100) // High motor temperature threshold
-    {
-        if (globalState->derateReason & DERATE_MOTOR_HIGHTEMP == 0)
-        {
-            tempVltState->motorTempChanged = true;
-            tempVltState->fansOrder = true;
-        }
-
-        globalState->derateReason |= DERATE_MOTOR_HIGHTEMP;
-    }
-    else
-    {
-        if (globalState->derateReason & DERATE_MOTOR_HIGHTEMP)
-        {
-            tempVltState->motorTempChanged = true;
-            tempVltState->fansOrder = false;
-        }
-        globalState->derateReason &= ~DERATE_MOTOR_HIGHTEMP;
-    }
-
-    if (motorTemp > 120) // Over motor temperature threshold
-    {
-
-        globalState->derateReason |= DERATE_MOTOR_OVERTEMP; // we don't activate fans here because overtemp => hightemp
-    }
-    else
-    {
-        globalState->derateReason &= ~DERATE_MOTOR_OVERTEMP; // we don't activate or deactivate fans beause the car might be in high temp but not overtemp
-    }
-}
-
-void regulateInverterTemperature(GlobalState_t *globalState, TempratureVoltageState_t *tempVltState, int inverterTemp)
-{
-    if (inverterTemp > 100) // High inverter temperature threshold
-    {
-        if (globalState->derateReason & DERATE_INVERTER_HIGHTEMP == 0)
-        {
-            tempVltState->inverterTempChanged = true;
-            tempVltState->pumpsOrder = true;
-        }
-
-        globalState->derateReason |= DERATE_INVERTER_HIGHTEMP;
-    }
-    else
-    {
-        if (globalState->derateReason & DERATE_INVERTER_HIGHTEMP)
-        {
-            tempVltState->inverterTempChanged = true;
-            tempVltState->pumpsOrder = false;
-        }
-        globalState->derateReason &= ~DERATE_INVERTER_HIGHTEMP;
-    }
-
-    if (inverterTemp > 120) // Over inverter temperature threshold
-    {
-
-        globalState->derateReason |= DERATE_INVERTER_OVERTEMP; // we don't activate fans here because overtemp => hightemp
-    }
-    else
-    {
-        globalState->derateReason &= ~DERATE_INVERTER_OVERTEMP; // we don't activate or deactivate pumps beause car might be in high temp but not overtemp
-    }
-}
+}*/

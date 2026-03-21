@@ -106,11 +106,11 @@ void EmulatorCanRx(void *pvParameters)
     CAN_Replay_Init("./dataSets/can_messages.csv");
     TickType_t lastWakeUp = xTaskGetTickCount();
     unsigned long i = 0;
-    CanMessage_t msg = {0};
+    dataMessage_t msg = {0};
 
     CanRxParams_t *params = (CanRxParams_t *)pvParameters;
-    QueueHandle_t *xTemperatureVoltageQueue = params->xTemperatureVoltageQueue;
-    QueueHandle_t *xMotorControllerQueue = params->xMotorControllerQueue;
+    QueueHandle_t *xTemperatureVoltageQueue = params->xMainQueue;
+    QueueHandle_t *xMotorControllerQueue = params->xTRVPQueue;
 
     while (1)
     {

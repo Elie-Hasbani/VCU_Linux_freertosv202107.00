@@ -12,12 +12,12 @@
 #include "console.h"
 
 #include "TaskCanRX.h"
-#include "TaskMotorController.h"
+#include "TaskMain.h"
 #include "VCU.h"
 #include "throttle.h"
 #include "utils.h"
 #include "TaskCanTx.h"
-#include "TaskTmpVltMngr.h"
+#include "TaskRawValuesProcessing.h"
 
 // test
 #include "EmulatorCanRX.h"
@@ -25,20 +25,18 @@
 void MainApp(void)
 {
 
-    QueueHandle_t xMotorControllerQueue = xQueueCreate(10, sizeof(CanMessage_t));
-    QueueHandle_t xTemperatureVoltageQueue = xQueueCreate(10, sizeof(CanMessage_t));
+    QueueHandle_t xMainQueue = xQueueCreate(10, sizeof(dataMessage_t));
+    QueueHandle_t xTRVPQueue = xQueueCreate(10, sizeof(dataMessage_t));
     QueueHandle_t xIHMQueue = xQueueCreate(10, sizeof(IHMOrder_t));
-    QueueHandle_t xCanTxQueue = xQueueCreate(10, sizeof(CanMessage_t));
+    QueueHandle_t xCanTxQueue = xQueueCreate(10, sizeof(dataMessage_t));
 
     initThrottleValues();
     // GetUserThrottleCommand();
 
-    GlobalState_t globalState = {0};
-
-    MotorControllerParams_t motorControllerParams = {&globalState, &xMotorControllerQueue, &xIHMQueue, &xCanTxQueue};
-    CanRxParams_t canRxParams = {&xTemperatureVoltageQueue, &xMotorControllerQueue};
+    MainParams_t mainTaskParam = {&xMainQueue, &xTRVPQueue, &xIHMQueue, &xCanTxQueue};
+    CanRxParams_t canRxParams = {&xMainQueue, &xTRVPQueue};
     CanTxParam_t canTxParams = {&xCanTxQueue};
-    TmpVltMngrParams_t tmpVltMngrParams = {&globalState, &xTemperatureVoltageQueue, &xIHMQueue};
+    TRVPParams_t TRVPParams = {&xTRVPQueue};
     /*xTaskCreate(
         TaskCanRx,
         "CAN_RX",
@@ -56,10 +54,10 @@ void MainApp(void)
         NULL);
 
     xTaskCreate(
-        TaskMotorController,
-        "MOTOR_CONTROLLER",
+        TaskMain,
+        "MAIN",
         configMINIMAL_STACK_SIZE,
-        &motorControllerParams,
+        &mainTaskParam,
         tskIDLE_PRIORITY,
         NULL);
 
@@ -72,10 +70,10 @@ void MainApp(void)
         NULL);
 
     xTaskCreate(
-        TaskTmpVltMngr,
-        "TMP_VLT_MNGR",
+        TaskRawValuesProcessing,
+        "TRVP",
         configMINIMAL_STACK_SIZE,
-        &tmpVltMngrParams,
+        &TRVPParams,
         tskIDLE_PRIORITY,
         NULL);
 
@@ -122,4 +120,7 @@ initThrottleValues()
 
     speedLimit = 160;     // km/h speed limiter
     ThrotRpmFilt = 50.0f; // Filtered RPM used for throttle logic
+
+    motorTempMax = 100.0f;
+    inverterTempMax = 90.0f;
 }

@@ -6,22 +6,39 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
+typedef enum messageIds
+{
+    wheel1Id,
+    wheel2Id,
+    wheel3Id,
+    wheel4Id,
+
+    apps1Id,
+    apps2Id,
+
+    motor_tempId,
+    inverter_tempId,
+    voltageId,
+
+    throtle_cmdId
+
+} MessageIds;
+
 typedef struct
 {
     uint8_t id;
     int32_t data;
-    uint8_t length;
     TickType_t timestamp;
 
-} CanMessage_t;
+} dataMessage_t;
 
 typedef struct
 {
     int32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
     uint32_t speed;          // calculated speed
 
-    CanMessage_t wheelSpeeds[4];
-    CanMessage_t appsValues[2];
+    dataMessage_t wheelSpeeds[4];
+    dataMessage_t appsValues[2];
 
     bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
     TickType_t lastCheckedBreakPedal;
@@ -34,9 +51,26 @@ typedef struct
 
 typedef struct
 {
-    CanMessage_t motorTemp;
-    CanMessage_t inverterTemp;
-    CanMessage_t Voltage;
+    int32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
+    uint32_t speed;          // calculated speed
+
+    dataMessage_t wheelSpeeds[4];
+    dataMessage_t appsValues[2];
+
+    bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
+    TickType_t lastCheckedBreakPedal;
+
+    TickType_t lastCallTimeStmp;
+
+    bool direction; // true for forward, false for reverse
+
+} MainState_t;
+
+typedef struct
+{
+    dataMessage_t motorTemp;
+    dataMessage_t inverterTemp;
+    dataMessage_t Voltage;
 
     TickType_t lastCallTimeStmp;
 
@@ -64,11 +98,6 @@ typedef struct
 
 } IHMOrder_t;
 
-typedef struct
-{
-    uint16_t derateReason;
-} GlobalState_t;
-
 //
 //
 //
@@ -76,16 +105,16 @@ typedef struct
 // Tasks parameters
 typedef struct
 {
-    GlobalState_t *globalState;
-    QueueHandle_t *xMotorControllerQueue;
-    QueueHandle_t *IHMQueue;
+    QueueHandle_t *xMainQueue;
+    QueueHandle_t *xTRVPQueue;
+    QueueHandle_t *xIHMQueue;
     QueueHandle_t *xCanTxQueue;
-} MotorControllerParams_t;
+} MainParams_t;
 
 typedef struct
 {
-    QueueHandle_t *xTemperatureVoltageQueue;
-    QueueHandle_t *xMotorControllerQueue;
+    QueueHandle_t *xMainQueue;
+    QueueHandle_t *xTRVPQueue;
 } CanRxParams_t;
 
 typedef struct
@@ -95,9 +124,7 @@ typedef struct
 
 typedef struct
 {
-    GlobalState_t *globalState;
-    QueueHandle_t *xTemperatureVoltageQueue;
-    QueueHandle_t *IHMQueue;
-
-} TmpVltMngrParams_t;
+    QueueHandle_t *xTRVPQueue;
+    // QueueHandle_t *xIHMQueue;
+} TRVPParams_t;
 #endif // STRUCTS_H

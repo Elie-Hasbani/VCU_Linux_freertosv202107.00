@@ -6,7 +6,7 @@
 #include "structs.h"
 
 #include "console.h"
-#include "TaskMotorController.h"
+#include "TaskMain.h"
 
 #include "utils.h"
 #include "my_fp.h"
@@ -14,7 +14,7 @@
 
 void PrintMotorControllerState(const MotorControlState_t *motorState);
 
-void TaskMotorController(void *pvParameters)
+void TaskMain(void *pvParameters)
 {
     MotorControlState_t motorState = {0};
 
@@ -25,21 +25,21 @@ void TaskMotorController(void *pvParameters)
     motorState.appsValues[0].data = 1050;
     motorState.appsValues[1].data = 1070;
 
-    MotorControllerParams_t *params = (MotorControllerParams_t *)pvParameters;
-    GlobalState_t *globalState = params->globalState;
-    QueueHandle_t *xMotorControllerQueue = params->xMotorControllerQueue;
-    QueueHandle_t *xIHMQueue = params->IHMQueue;
+    MainParams_t *params = (MainParams_t *)pvParameters;
+    QueueHandle_t *xMainQueue = params->xMainQueue;
+    QueueHandle_t *xTRVPQueu = params->xTRVPQueue;
+    QueueHandle_t *xIHMQueue = params->xIHMQueue;
     QueueHandle_t *xCanTxQueue = params->xCanTxQueue;
 
     while (1)
     {
         // console_print((ledState = !ledState) ? "Led2 ON\n" : "Led2 OFF\n");
 
-        CanMessage_t msg = {0};
+        dataMessage_t msg = {0};
         BaseType_t xReturn;
         console_print("------(B)MotorController------\n");
 
-        while ((xQueueReceive(*xMotorControllerQueue, &msg, pdMS_TO_TICKS(100))) == pdPASS)
+        while ((xQueueReceive(*xMainQueue, &msg, pdMS_TO_TICKS(100))) == pdPASS)
         {
             switch (msg.id)
             {
@@ -68,11 +68,10 @@ void TaskMotorController(void *pvParameters)
 
         if (motorState.lastCallTimeStmp - xTaskGetTickCount() > pdMS_TO_TICKS(5))
         {
-            float throttle = ProcessThrottle(&motorState, globalState, xTaskGetTickCount());
-            CanMessage_t throttleMsg = {
+            float throttle = 8.0f; // ProcessThrottle(&motorState, globalState, xTaskGetTickCount());
+            dataMessage_t throttleMsg = {
                 .id = 0x50,                   // Throttle command message ID
                 .data = FP_FROMFLT(throttle), // Convert to percentage and scale
-                .length = 4,
                 .timestamp = xTaskGetTickCount()
 
             };

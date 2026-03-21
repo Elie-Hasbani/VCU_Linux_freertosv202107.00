@@ -6,7 +6,7 @@
 #include "structs.h"
 
 #include "console.h"
-#include "TaskTmpVltMngr.h"
+#include "TaskRawValuesProcessing.h"
 
 #include "utils.h"
 #include "project_config.h"
@@ -27,7 +27,7 @@ void TaskTmpVltMngr(void *pvParameters)
     while (1)
     {
         // console_print((ledState = !ledState) ? "Led2 ON\n" : "Led2 OFF\n");
-        CanMessage_t msg = {0};
+        dataMessage_t msg = {0};
         BaseType_t xReturn = xQueueReceive(*xTemperatureVoltageQueue, &msg, pdMS_TO_TICKS(500));
         console_print("------(B)TempVltController------\n");
 

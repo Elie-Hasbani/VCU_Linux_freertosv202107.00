@@ -64,6 +64,9 @@ int throtRampRpm;
 float throtRamp;
 float throtRampMax;
 
+float motorTempMax;
+float inverterTempMax;
+
 /**
  * @brief Check the throttle input for sanity and limit the range to min/max values
  *
@@ -134,11 +137,8 @@ float NormalizeThrottle(int potval, int potIdx)
  * @param motorControlState struct containing all nessasry data for throttle calculation
  * @return float, value of throttle command between -100.0 and 100.0
  */
-float CalcThrottle(const MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx) /*int potval, int potIdx, bool brkpedal*/
+float CalcThrottle(float potnom, int speed, bool brake) /*int potval, int potIdx, bool brkpedal*/
 {
-    int speed = motorControlState->speed;    // Variables::GetInt(VarIds::SPEED);
-    bool dir = motorControlState->direction; // Variables::GetInt(VarIds::DIRECTION);
-    float potnom = 0.0f;                     // normalize potval against the potmin and potmax values
 
     if (speed < 0) // make sure speed is not negative
     {
@@ -169,12 +169,7 @@ float CalcThrottle(const MotorControlState_t *motorControlState, int processedPo
 
     ///////////////////////
 
-    if (dir == 0) // neutral no torque command
-    {
-        return 0;
-    }
-
-    if (motorControlState->brakePedalPressed) // if break is pressed, we must finish here and return a negative value.
+    if (brake) // if break is pressed, we must finish here and return regen.
     {
         if (speed < 100 || speed < regenendRpm)
         {
@@ -193,7 +188,7 @@ float CalcThrottle(const MotorControlState_t *motorControlState, int processedPo
     }
 
     // substract offset, bring potval to the potmin-potmax scale and make a percentage
-    potnom = NormalizeThrottle(processedPotVal, processedPotValIdx); // to bring it between 0 and 100
+    // potnom = NormalizeThrottle(processedPotVal, processedPotValIdx); // to bring it between 0 and 100
 
     // Apply the deadzone parameter. To avoid that we lose the range between
     // 0 and throtdead, the scale of potnom is mapped from the [0.0, 100.0] scale
@@ -222,14 +217,9 @@ float CalcThrottle(const MotorControlState_t *motorControlState, int processedPo
 
     //!!!potnom is throttle position up to this point//
 
-    if (dir == 1) // Forward
-    {
-        // change limits to uint32, multiply by 10 then 0.1 to add a decimal to remove the hard edges
-        potnom = changeFloat(potnom, 0, 100, regenlim * 10, throtmax * 10); ////most important line for regen calculation, will have a schematics to explain how it works.
-        potnom *= 0.1;
-    }
+    potnom = changeFloat(potnom, 0, 100, regenlim * 10, throtmax * 10); ////most important line for regen calculation, will have a schematics to explain how it works.
+    potnom *= 0.1;
 
-    LastPedalPos = PedalPos; // Save current pedal position for next loop. //inutilisé
     return potnom;
 }
 
@@ -263,31 +253,26 @@ void SpeedLimitCommand(float *finalSpnt, int speed)
     }
 }
 
-bool TemperatureDerate(const GlobalState_t *globalState, float *finalSpnt)
+bool TemperatureDerate(float temp, float tempMax, float *finalSpnt)
 {
-    uint16_t DerateReason = globalState->derateReason;
+    // uint16_t DerateReason = Param::GetInt(Param::TorqDerate);
     float limit = 0;
-    bool tempHigh = DerateReason & (DERATE_MOTOR_HIGHTEMP | DERATE_INVERTER_HIGHTEMP); // tempMax + 2.0f(defined in monitor Temprature Task)
-    bool overTemp = DerateReason & (DERATE_MOTOR_OVERTEMP | DERATE_INVERTER_OVERTEMP);
 
-    if (!tempHigh && !overTemp) // temperature low, allow full request
+    if (temp <= tempMax)
     {
         limit = 100.0f;
     }
-    else if (tempHigh && !overTemp) // high, limit to 50% of max troque
+    else if (temp < (tempMax + 2.0f))
     {
         limit = 50.0f;
-        DerateReason |= 16;
-    } // else temp way too high and limit = 0
+        // DerateReason |= 16;
+        // Param::SetInt(Param::TorqDerate, DerateReason);
+    }
 
-    if (finalSpnt >= 0)
-    {
+    if (*finalSpnt >= 0)
         *finalSpnt = MIN(*finalSpnt, limit);
-    }
     else
-    {
         *finalSpnt = MAX(*finalSpnt, -limit);
-    }
 
     return limit < 100.0f;
 }

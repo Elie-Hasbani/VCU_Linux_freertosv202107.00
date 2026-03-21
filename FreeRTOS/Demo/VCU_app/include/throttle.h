@@ -6,14 +6,15 @@
 
 bool CheckAndLimitRange(int *potval, int potIdx);
 float NormalizeThrottle(int potval, int potIdx);
-float CalcThrottle(const MotorControlState_t *motorControlState, int processedPotVal, int processedPotValIdx);
+bool TemperatureDerate(float temp, float tempMax, float *finalSpnt);
+float RampThrottle(float finalSpnt);
+float CalcThrottle(float potnom, int speed, bool brake);
+
 float CalcIdleSpeed(int speed);
 float CalcCruiseSpeed(int speed);
-bool TemperatureDerate(const GlobalState_t *globalState, float *finalSpnt);
 void UdcLimitCommand(float *finalSpnt, float udc);
 void IdcLimitCommand(float *finalSpnt, float idc);
 void SpeedLimitCommand(float *finalSpnt, int speed);
-float RampThrottle(float finalSpnt);
 extern int potmin[2];
 extern int potmax[2];
 extern float regenRpm;
@@ -50,5 +51,8 @@ extern float brkRamped;
 extern int throtRampRpm;
 extern float throtRamp;
 extern float throtRampMax;
+
+float motorTempMax;
+float inverterTempMax;
 
 #endif // THROTTLE_H
