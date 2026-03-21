@@ -52,7 +52,7 @@ extern int throtRampRpm;
 extern float throtRamp;
 extern float throtRampMax;
 
-float motorTempMax;
-float inverterTempMax;
+extern float motorTempMax;
+extern float inverterTempMax;
 
 #endif // THROTTLE_H

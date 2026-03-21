@@ -109,8 +109,8 @@ void EmulatorCanRx(void *pvParameters)
     dataMessage_t msg = {0};
 
     CanRxParams_t *params = (CanRxParams_t *)pvParameters;
-    QueueHandle_t *xTemperatureVoltageQueue = params->xMainQueue;
-    QueueHandle_t *xMotorControllerQueue = params->xTRVPQueue;
+    QueueHandle_t *xMainQueue = params->xMainQueue;
+    QueueHandle_t *xTRVPQueue = params->xTRVPQueue;
 
     while (1)
     {
@@ -128,11 +128,11 @@ void EmulatorCanRx(void *pvParameters)
             // Envoyer à la queue appropriée selon l'ID
             if (msg.id >= 0x40 && msg.id <= 0x42)
             {
-                xQueueSend(*xTemperatureVoltageQueue, &msg, pdMS_TO_TICKS(5));
+                xQueueSend(*params->xTRVPQueue, &msg, pdMS_TO_TICKS(5));
             }
             else if ((msg.id >= 0x20 && msg.id <= 0x23) || (msg.id >= 0x30 && msg.id <= 0x31))
             {
-                xQueueSend(*xMotorControllerQueue, &msg, pdMS_TO_TICKS(5));
+                xQueueSend(*xMainQueue, &msg, pdMS_TO_TICKS(5));
             }
         }
         // console_print((ledState = !ledState) ? "Led ON\n" : "Led OFF\n");

@@ -6,7 +6,7 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
-typedef enum messageIds
+/*typedef enum messageIds
 {
     wheel1Id,
     wheel2Id,
@@ -22,7 +22,7 @@ typedef enum messageIds
 
     throtle_cmdId
 
-} MessageIds;
+} MessageIds;*/
 
 typedef struct
 {

@@ -12,7 +12,7 @@ void TaskCanTx(void *pvParameters)
 {
     TickType_t lastWakeUp = xTaskGetTickCount();
     unsigned long i = 0;
-    CanMessage_t msg = {0};
+    dataMessage_t msg = {0};
 
     CanTxParam_t *params = (CanTxParam_t *)pvParameters;
     QueueHandle_t *xCanTxQueue = params->xCanTxQueue;
@@ -23,7 +23,7 @@ void TaskCanTx(void *pvParameters)
         msg.id++;
         msg.timestamp = xTaskGetTickCount();
 
-        CanMessage_t msg = {0};
+        dataMessage_t msg = {0};
         BaseType_t xReturn = xQueueReceive(*xCanTxQueue, &msg, portMAX_DELAY);
         console_print("(B)------CanTX------\n");
         if (xReturn == pdPASS)
