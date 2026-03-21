@@ -1,0 +1,37 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+test_runner
+
+# Compiler output
+*.d
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.sublime-project
+*.sublime-workspace
+
+# Debugging
+.gdbinit
+core
+core.*
+vgcore.*
+
+# Test coverage
+*.gcda
+*.gcno
+coverage/
+
+# Dependencies
+*.log
