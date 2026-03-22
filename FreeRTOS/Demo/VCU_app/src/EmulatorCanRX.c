@@ -101,16 +101,32 @@ void CAN_Replay_Close(void)
     }
 }
 
+typedef enum canIds
+{
+    CAN_wheelFRId = 0x20,
+    CAN_wheelFLId = 0x21,
+    CAN_wheelRRId = 0x22,
+    CAN_wheelRLId = 0x23,
+
+    CAN_apps1Id = 0x30,
+    CAN_apps2Id = 0x31,
+
+    CAN_motor_tempId = 0x40,
+    CAN_inverter_tempId = 0x41,
+    CAN_voltageId = 0x42,
+
+} CanIds;
+
 void EmulatorCanRx(void *pvParameters)
 {
     CAN_Replay_Init("./dataSets/can_messages.csv");
     TickType_t lastWakeUp = xTaskGetTickCount();
-    unsigned long i = 0;
-    dataMessage_t msg = {0};
 
     CanRxParams_t *params = (CanRxParams_t *)pvParameters;
     QueueHandle_t *xMainQueue = params->xMainQueue;
     QueueHandle_t *xTRVPQueue = params->xTRVPQueue;
+
+    dataMessage_t msg = {0};
 
     while (1)
     {
@@ -119,24 +135,60 @@ void EmulatorCanRx(void *pvParameters)
         dataCan canMsg;
         if (CAN_ReadNext(&canMsg))
         {
-            msg.id = canMsg.id;
             msg.data = canMsg.data;
             msg.timestamp = xTaskGetTickCount();
+            dataMessage_t msg = {0};
 
             console_print("decoded CAN msg: %x %d\n", msg.id, msg.data);
 
-            // Envoyer à la queue appropriée selon l'ID
-            if (msg.id >= 0x40 && msg.id <= 0x42)
+            // Envoyer à la queue appropriée selon l'ID avec switch
+            switch ((CanIds)msg.id)
             {
-                xQueueSend(*params->xTRVPQueue, &msg, pdMS_TO_TICKS(5));
-            }
-            else if ((msg.id >= 0x20 && msg.id <= 0x23) || (msg.id >= 0x30 && msg.id <= 0x31))
-            {
+            // Wheel speeds went to Main Task
+            case CAN_wheelFRId:
+                msg.id = wheelFRId;
+                xQueueSend(*xTRVPQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            case CAN_wheelFLId:
+                msg.id = wheelFLId;
+                xQueueSend(*xTRVPQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            case CAN_wheelRRId:
+                msg.id = wheelRRId;
+                xQueueSend(*xTRVPQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            case CAN_wheelRLId:
+                msg.id = wheelRLId;
+                xQueueSend(*xTRVPQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+
+            case CAN_apps1Id:
+                msg.id = apps1Id;
+                xQueueSend(*xTRVPQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            case CAN_apps2Id:
+                msg.id = apps2Id;
+                xQueueSend(*xTRVPQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+
+            case CAN_motor_tempId:
+                msg.id = motor_tempId;
                 xQueueSend(*xMainQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            case CAN_inverter_tempId:
+                msg.id = inverter_tempId;
+                xQueueSend(*xMainQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            case CAN_voltageId:
+                msg.id = voltageId;
+                xQueueSend(*xMainQueue, &msg, pdMS_TO_TICKS(5));
+                break;
+            default:
+                console_print("Unknown CAN ID: %x\n", msg.id);
+                break;
             }
         }
         // console_print((ledState = !ledState) ? "Led ON\n" : "Led OFF\n");
-        msg.id++;
         msg.timestamp = xTaskGetTickCount();
         console_print("------(E)EmulatorCanRx------\n\n");
 

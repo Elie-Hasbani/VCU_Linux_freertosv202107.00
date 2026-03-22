@@ -12,18 +12,13 @@
 #include "my_fp.h"
 #include "project_config.h"
 
-void PrintMotorControllerState(const MotorControlState_t *motorState);
+void PrintMainState(const MainState_t *mainState);
 
 void TaskMain(void *pvParameters)
 {
-    MotorControlState_t motorState = {0};
+    MainState_t mainState = {0};
 
     TickType_t timeNow = xTaskGetTickCount();
-    motorState.speed = 0;
-    motorState.direction = 1; // forward
-    motorState.brakePedalPressed = false;
-    motorState.appsValues[0].data = 1050;
-    motorState.appsValues[1].data = 1070;
 
     MainParams_t *params = (MainParams_t *)pvParameters;
     QueueHandle_t *xMainQueue = params->xMainQueue;
@@ -31,44 +26,47 @@ void TaskMain(void *pvParameters)
     QueueHandle_t *xIHMQueue = params->xIHMQueue;
     QueueHandle_t *xCanTxQueue = params->xCanTxQueue;
 
+    mainState.inverterTemp.timeStatus = STATUS_NOT_READY;
+    mainState.motorTemp.timeStatus = STATUS_NOT_READY;
+    mainState.Voltage.timeStatus = STATUS_NOT_READY;
+    mainState.speed.timeStatus = STATUS_NOT_READY;
+    mainState.ThrottleCommand.timeStatus = STATUS_NOT_READY;
+
     while (1)
     {
         // console_print((ledState = !ledState) ? "Led2 ON\n" : "Led2 OFF\n");
 
         dataMessage_t msg = {0};
         BaseType_t xReturn;
-        console_print("------(B)MotorController------\n");
+        console_print("------(B)MainState------\n");
 
         while ((xQueueReceive(*xMainQueue, &msg, pdMS_TO_TICKS(100))) == pdPASS)
         {
+            msg.timeStatus = STATUS_TIME_OK;
             switch (msg.id)
             {
-            case wheel1Id: // Wheel1 speed message
-                motorState.wheelSpeeds[0] = msg;
+            case motor_tempId: // motor temp
+                mainState.motorTemp = msg;
                 break;
-            case wheel2Id: // Wheel2 speed message
-                motorState.wheelSpeeds[1] = msg;
+            case inverter_tempId: // inverter temp
+                mainState.inverterTemp = msg;
                 break;
-            case wheel3Id: // Wheel3 speed message
-                motorState.wheelSpeeds[2] = msg;
+            case voltageId: // voltage message
+                mainState.Voltage = msg;
                 break;
-            case wheel4Id: // Wheel4 speed message
-                motorState.wheelSpeeds[3] = msg;
+            case calculatedSpeedId: // calculated speed
+                mainState.speed = msg;
                 break;
-            case apps1Id: // APPS1 value
-                motorState.appsValues[0] = msg;
-                break;
-            case apps2Id: // APPS2 value
-                motorState.appsValues[1] = msg;
+            case processedThrottleId: // processed throttle value
+                mainState.ThrottleCommand = msg;
                 break;
             }
-
             console_print("Received from queue: id=%x, timestamp=%lu\n", msg.id, msg.timestamp);
         }
 
-        if (motorState.lastCallTimeStmp - xTaskGetTickCount() > pdMS_TO_TICKS(5))
+        if (mainState.lastCallTimeStmp - xTaskGetTickCount() > pdMS_TO_TICKS(5))
         {
-            float throttle = 8.0f; // ProcessThrottle(&motorState, globalState, xTaskGetTickCount());
+            float throttle = ProcessThrottle(mainState.ThrottleCommand.data, mainState.speed.data, mainState.motorTemp.data, mainState.inverterTemp.data, mainState.Voltage.data);
             dataMessage_t throttleMsg = {
                 .id = 0x50,                   // Throttle command message ID
                 .data = FP_FROMFLT(throttle), // Convert to percentage and scale
@@ -80,29 +78,24 @@ void TaskMain(void *pvParameters)
             console_print("Calculated throttle command: %f\n", throttle);
         }
 
-        PrintMotorControllerState(&motorState);
+        PrintMainState(&mainState);
 
-        console_print("------(E)MotorController------\n\n");
-        motorState.lastCallTimeStmp = xTaskGetTickCount();
+        console_print("------(E)MainState------\n\n");
+        mainState.lastCallTimeStmp = xTaskGetTickCount();
     }
 
     // xTaskDelayUntil(&timeNow, pdMS_TO_TICKS(1000));
 }
 
-// functio, to print current state of the motor controller (for debug)
-void PrintMotorControllerState(const MotorControlState_t *motorState)
+// function, to print current state of the motor controller (for debug)
+void PrintMainState(const MainState_t *mainState)
 {
-    console_print("Motor Control State:\n");
-    console_print("  Throttle Command: %lu\n", motorState->ThrottleCommand);
-    console_print("  Speed: %lu\n", motorState->speed);
-    console_print("  Direction: %s\n", motorState->direction ? "Forward" : "Reverse");
-    console_print("  Brake Pedal Pressed: %s\n", motorState->brakePedalPressed ? "Yes" : "No");
-    for (int i = 0; i < 4; ++i)
-    {
-        console_print("  Wheel Speed %d: ID=%x, Data=%lu, Timestamp=%lu\n", i + 1, motorState->wheelSpeeds[i].id, motorState->wheelSpeeds[i].data, motorState->wheelSpeeds[i].timestamp);
-    }
-    for (int i = 0; i < 2; ++i)
-    {
-        console_print("  APPS Value %d: ID=%x, Data=%lu, Timestamp=%lu\n", i + 1, motorState->appsValues[i].id, motorState->appsValues[i].data, motorState->appsValues[i].timestamp);
-    }
+    console_print("Main State:\n");
+    console_print("  Throttle Command: %lu\n", mainState->ThrottleCommand.data);
+    console_print("  Speed: %lu\n", mainState->speed.data);
+    console_print("  Direction: %s\n", mainState->direction ? "Forward" : "Reverse");
+    console_print("  Brake Pedal Pressed: %s\n", mainState->brakePedalPressed ? "Yes" : "No");
+    console_print("  Motor Temp: %d (timestamp: %lu)\n", mainState->motorTemp.data, mainState->motorTemp.timestamp);
+    console_print("  Inverter Temp: %d (timestamp: %lu)\n", mainState->inverterTemp.data, mainState->inverterTemp.timestamp);
+    console_print("  Voltage: %d (timestamp: %lu)\n", mainState->Voltage.data, mainState->Voltage.timestamp);
 }

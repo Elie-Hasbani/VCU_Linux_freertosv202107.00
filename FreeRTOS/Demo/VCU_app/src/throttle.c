@@ -253,7 +253,7 @@ void SpeedLimitCommand(float *finalSpnt, int speed)
     }
 }
 
-bool TemperatureDerate(float temp, float tempMax, float *finalSpnt)
+bool TemperatureDerate(int temp, int tempMax, float *finalSpnt)
 {
     // uint16_t DerateReason = Param::GetInt(Param::TorqDerate);
     float limit = 0;
@@ -262,7 +262,7 @@ bool TemperatureDerate(float temp, float tempMax, float *finalSpnt)
     {
         limit = 100.0f;
     }
-    else if (temp < (tempMax + 2.0f))
+    else if (temp < (tempMax + 2))
     {
         limit = 50.0f;
         // DerateReason |= 16;

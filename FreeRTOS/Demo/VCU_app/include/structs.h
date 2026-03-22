@@ -6,12 +6,19 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
-/*typedef enum messageIds
+typedef enum
 {
-    wheel1Id,
-    wheel2Id,
-    wheel3Id,
-    wheel4Id,
+    STATUS_TIME_OK = 0,
+    STATUS_TIMEOUT,
+    STATUS_NOT_READY,
+} DataTimeStatus_t;
+
+typedef enum messageIds
+{
+    wheelFRId,
+    wheelFLId,
+    wheelRRId,
+    wheelRLId,
 
     apps1Id,
     apps2Id,
@@ -20,42 +27,30 @@
     inverter_tempId,
     voltageId,
 
-    throtle_cmdId
+    calculatedSpeedId,
+    processedThrottleId,
 
-} MessageIds;*/
+    throttleCmdId
+
+} MessageIds;
 
 typedef struct
 {
-    uint8_t id;
+    MessageIds id;
     int32_t data;
     TickType_t timestamp;
+    DataTimeStatus_t timeStatus;
 
 } dataMessage_t;
 
 typedef struct
 {
-    int32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
-    uint32_t speed;          // calculated speed
+    dataMessage_t ThrottleCommand; // calculated throttle command to be sent to the inverter
+    dataMessage_t speed;           // calculated speed
 
-    dataMessage_t wheelSpeeds[4];
-    dataMessage_t appsValues[2];
-
-    bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
-    TickType_t lastCheckedBreakPedal;
-
-    TickType_t lastCallTimeStmp;
-
-    bool direction; // true for forward, false for reverse
-
-} MotorControlState_t;
-
-typedef struct
-{
-    int32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
-    uint32_t speed;          // calculated speed
-
-    dataMessage_t wheelSpeeds[4];
-    dataMessage_t appsValues[2];
+    dataMessage_t motorTemp;
+    dataMessage_t inverterTemp;
+    dataMessage_t Voltage;
 
     bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
     TickType_t lastCheckedBreakPedal;
@@ -68,19 +63,18 @@ typedef struct
 
 typedef struct
 {
-    dataMessage_t motorTemp;
-    dataMessage_t inverterTemp;
-    dataMessage_t Voltage;
+    // int32_t ThrottleCommand; // calculated throttle command to be sent to the inverter
+    uint32_t speed; // calculated speed
+
+    dataMessage_t wheelSpeeds[4];
+    dataMessage_t appsValues[2];
+
+    bool brakePedalPressed; // true if brake pedal is pressed, false otherwise
+    TickType_t lastCheckedBreakPedal;
 
     TickType_t lastCallTimeStmp;
 
-    bool inverterTempChanged;
-    bool fansOrder;
-
-    bool motorTempChanged;
-    bool pumpsOrder;
-
-} TempratureVoltageState_t;
+} TRVPState_t;
 
 typedef enum Order
 {
@@ -90,6 +84,14 @@ typedef enum Order
     R2Dbuzzer = 3,
 
 } Order_t;
+
+typedef enum speedStatus
+{
+    SPEED_VALID,
+    SPEED_DEGRADED,
+    SPEED_INVALID
+
+} SpeedStatus;
 
 typedef struct
 {
@@ -125,6 +127,6 @@ typedef struct
 typedef struct
 {
     QueueHandle_t *xTRVPQueue;
-    // QueueHandle_t *xIHMQueue;
+    QueueHandle_t *xMainQueue;
 } TRVPParams_t;
 #endif // STRUCTS_H

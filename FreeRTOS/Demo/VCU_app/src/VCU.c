@@ -36,7 +36,7 @@ void MainApp(void)
     MainParams_t mainTaskParam = {&xMainQueue, &xTRVPQueue, &xIHMQueue, &xCanTxQueue};
     CanRxParams_t canRxParams = {&xMainQueue, &xTRVPQueue};
     CanTxParam_t canTxParams = {&xCanTxQueue};
-    TRVPParams_t TRVPParams = {&xTRVPQueue};
+    TRVPParams_t TRVPParams = {&xTRVPQueue, &xMainQueue};
     /*xTaskCreate(
         TaskCanRx,
         "CAN_RX",

@@ -105,16 +105,134 @@ float ProcessThrottle(float finalSpnt, int speed, float motorTemp, float inverte
     return finalSpnt;
 }
 
-int calculateSpeed(const MotorControlState_t *motorState)
+int calculateSpeed(dataMessage_t wheelSpeeds[4], int wheelCount)
 {
 
     // Simple average of the four wheel speeds
     int sum = 0;
-    for (int i = 0; i < 4; ++i)
+    int32_t selectedValues[4];
+    uint32_t speed = 0;
+    int validCount = 0;
+
+    for (int i = 0; i < wheelCount; ++i)
     {
-        sum += motorState->wheelSpeeds[i].data;
+        if (wheelSpeeds[i].timeStatus != STATUS_TIME_OK)
+        {
+            console_print("Wheel speed %d is not OK, time status: %d\n", i + 1, wheelSpeeds[i].timeStatus);
+            continue; // Skip this wheel if its data is not OK
+        }
+        selectedValues[validCount] = wheelSpeeds[validCount].data;
+        ++validCount;
     }
-    return sum / 4;
+
+    sort4(selectedValues, validCount);
+
+    switch (validCount)
+    {
+    case 4:
+        speed = (selectedValues[1] + selectedValues[2]) >> 1;
+        break;
+    case 3:
+        int d01 = ABS(selectedValues[0] - selectedValues[1]);
+        int d12 = ABS(selectedValues[1] - selectedValues[2]);
+        int d02 = ABS(selectedValues[0] - selectedValues[2]);
+
+        if (d01 < 20 && d12 < 20)
+        {
+            speed = (selectedValues[0] + selectedValues[1] + selectedValues[2]) / 3;
+        }
+        else if (d01 < 20)
+        {
+            speed = (selectedValues[0] + selectedValues[1]) >> 1;
+        }
+        else if (d12 < 20)
+        {
+            speed = (selectedValues[1] + selectedValues[2]) >> 1;
+        }
+        else
+        {
+            console_print("3 values incoherent\n");
+            speed = 0;
+        }
+    case 2:
+        if (ABS(selectedValues[0] - selectedValues[1]) > 20) // If the two values are too different, we consider them unreliable
+        {
+            console_print("Two wheel speeds are too different, setting speed to 0\n");
+            speed = 0;
+        }
+        else
+        {
+            speed = (selectedValues[0] + selectedValues[1]) >> 1; // Average of the two values
+        }
+        break;
+
+    case 1:
+        console_print("Only one valid wheel speed, using it as speed\n");
+        speed = selectedValues[0]; // Only one valid value, use it as speed
+        break;
+    default:
+        console_print("No valid wheel speeds, setting speed to 0\n");
+        speed = 0; // No valid values, set speed to 0
+        break;
+    }
+    return speed;
+}
+
+bool checkWheelSpeedsInRange(dataMessage_t wheelSpeed)
+{
+}
+
+/** This function checks the timestamps of the received data messages and updates their time status accordingly.
+ *
+ * @param dataMsg An array or single data message to check.
+ * @param count The number of data messages in the array.
+ * @param now The current timestamp.
+ */
+void updateDataTimeStatus(dataMessage_t *dataMsg, int count, int maxDiff, TickType_t now)
+{
+    for (int i = 0; i < count; i++)
+    {
+        if (dataMsg[i].timeStatus == STATUS_NOT_READY)
+        {
+            continue;
+        }
+        TickType_t timeDiff = now - dataMsg[i].timestamp;
+        if (timeDiff > pdMS_TO_TICKS(maxDiff))
+        {
+            dataMsg[i].timeStatus = STATUS_TIMEOUT;
+            console_print("Data %d timed out\n", i + 1);
+        }
+    }
+}
+
+void sort4(int32_t v[4], uint8_t n)
+{
+    switch (n)
+    {
+    case 4:
+        swap(&v[0], &v[1]);
+        swap(&v[2], &v[3]);
+        swap(&v[0], &v[2]);
+        swap(&v[1], &v[3]);
+        swap(&v[1], &v[2]);
+        break;
+
+    case 3:
+        swap(&v[0], &v[1]);
+        swap(&v[1], &v[2]);
+        swap(&v[0], &v[1]);
+        break;
+
+    case 2:
+        swap(&v[0], &v[1]);
+        break;
+
+    case 1:
+    case 0:
+    default:
+        // rien à faire
+        break;
+    }
 }
 
 /*float checkMessageTimeStamps(const MotorControlState_t *motorState, GlobalState_t *globalState, TickType_t time_now)
