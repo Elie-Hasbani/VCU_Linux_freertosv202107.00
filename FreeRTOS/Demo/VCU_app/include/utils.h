@@ -1,8 +1,9 @@
 
 #include "FreeRTOS.h"
+#include "structs.h"
 
-float GetUserThrottleCommand(int pot1val, int pot2val, int speed, bool brake);
-float ProcessThrottle(float finalSpnt, int speed, float motorTemp, float inverterTemp, float voltage);
+float GetUserThrottleCommand(dataMessage_t *pot1val, dataMessage_t *pot2val, int speed, bool brake);
+float ProcessThrottle(float finalSpnt, int speed, int motorTemp, int inverterTemp, float voltage);
 void updateDataTimeStatus(dataMessage_t *dataMsg, int count, int maxDiff, TickType_t now);
 void sort4(int32_t v[4], uint8_t n);
 int calculateSpeed(dataMessage_t wheelSpeeds[4], int wheelCount);

@@ -6,7 +6,7 @@
 
 bool CheckAndLimitRange(int *potval, int potIdx);
 float NormalizeThrottle(int potval, int potIdx);
-bool TemperatureDerate(float temp, float tempMax, float *finalSpnt);
+bool TemperatureDerate(int temp, int tempMax, float *finalSpnt);
 float RampThrottle(float finalSpnt);
 float CalcThrottle(float potnom, int speed, bool brake);
 

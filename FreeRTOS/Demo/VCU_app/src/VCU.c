@@ -58,7 +58,7 @@ void MainApp(void)
         "MAIN",
         configMINIMAL_STACK_SIZE,
         &mainTaskParam,
-        tskIDLE_PRIORITY,
+        2U,
         NULL);
 
     xTaskCreate(
@@ -74,17 +74,19 @@ void MainApp(void)
         "TRVP",
         configMINIMAL_STACK_SIZE,
         &TRVPParams,
-        tskIDLE_PRIORITY,
+        2U,
         NULL);
 
     vTaskStartScheduler();
+
+    return;
 
     for (;;)
     {
     }
 }
 
-initThrottleValues()
+void initThrottleValues()
 {
     potmin[0] = 100;      // ADC raw min for pedal sensor 1
     potmin[1] = 100;      // ADC raw min for pedal sensor 2

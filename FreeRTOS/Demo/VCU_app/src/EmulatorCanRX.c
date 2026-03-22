@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+int finished = 0;
 
 typedef struct
 {
@@ -53,13 +54,14 @@ int CAN_ReadNext(dataCan *msg)
         // lire une ligne
         if (fgets(line, sizeof(line), file) == NULL)
         {
-            rewind(file);
-
-            // skip header
-            if (fgets(line, sizeof(line), file) == NULL)
+            // 👉 Si EOF → on s'arrête
+            if (feof(file))
+            {
                 return 0;
+            }
 
-            continue;
+            // 👉 erreur de lecture
+            return 0;
         }
 
         // trouver le séparateur ;
@@ -121,6 +123,7 @@ void EmulatorCanRx(void *pvParameters)
 {
     CAN_Replay_Init("./dataSets/can_messages.csv");
     TickType_t lastWakeUp = xTaskGetTickCount();
+    finished = 0;
 
     CanRxParams_t *params = (CanRxParams_t *)pvParameters;
     QueueHandle_t *xMainQueue = params->xMainQueue;
@@ -137,12 +140,11 @@ void EmulatorCanRx(void *pvParameters)
         {
             msg.data = canMsg.data;
             msg.timestamp = xTaskGetTickCount();
-            dataMessage_t msg = {0};
 
-            console_print("decoded CAN msg: %x %d\n", msg.id, msg.data);
+            console_print("decoded CAN msg: %x %d\n", canMsg.id, canMsg.data);
 
             // Envoyer à la queue appropriée selon l'ID avec switch
-            switch ((CanIds)msg.id)
+            switch ((CanIds)canMsg.id)
             {
             // Wheel speeds went to Main Task
             case CAN_wheelFRId:
@@ -188,10 +190,14 @@ void EmulatorCanRx(void *pvParameters)
                 break;
             }
         }
+        else
+        {
+            vTaskEndScheduler();
+        }
         // console_print((ledState = !ledState) ? "Led ON\n" : "Led OFF\n");
         msg.timestamp = xTaskGetTickCount();
         console_print("------(E)EmulatorCanRx------\n\n");
 
-        xTaskDelayUntil(&lastWakeUp, pdMS_TO_TICKS(1000));
+        xTaskDelayUntil(&lastWakeUp, pdMS_TO_TICKS(100));
     }
 }

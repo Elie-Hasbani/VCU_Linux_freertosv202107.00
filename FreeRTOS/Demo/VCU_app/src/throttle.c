@@ -217,8 +217,8 @@ float CalcThrottle(float potnom, int speed, bool brake) /*int potval, int potIdx
 
     //!!!potnom is throttle position up to this point//
 
-    potnom = changeFloat(potnom, 0, 100, regenlim * 10, throtmax * 10); ////most important line for regen calculation, will have a schematics to explain how it works.
-    potnom *= 0.1;
+    // potnom = changeFloat(potnom, 0, 100, regenlim * 10, throtmax * 10); ////most important line for regen calculation, will have a schematics to explain how it works.
+    // potnom *= 0.1;
 
     return potnom;
 }
@@ -243,13 +243,13 @@ void SpeedLimitCommand(float *finalSpnt, int speed)
 
     speedFiltered = IIRFILTER(speedFiltered, speed, 4);
 
-    if (finalSpnt > 0) // Only limit if driver is asking for positive torque (acceleration)
+    if (*finalSpnt > 0) // Only limit if driver is asking for positive torque (acceleration)
     {
         int speederr = speedLimit - speedFiltered; // How far below the speed limit we are
         int res = speederr / 4;                    // Scale the error down
 
-        res = MAX(0, res);               // Never allow negative (no throttle if over speed limit)
-        finalSpnt = MIN(res, finalSpnt); // Clamp driver’s request down to res if necessary
+        res = MAX(0, res);                 // Never allow negative (no throttle if over speed limit)
+        *finalSpnt = MIN(res, *finalSpnt); // Clamp driver’s request down to res if necessary
     }
 }
 

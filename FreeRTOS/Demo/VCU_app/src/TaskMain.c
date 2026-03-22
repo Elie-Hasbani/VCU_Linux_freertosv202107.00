@@ -35,12 +35,12 @@ void TaskMain(void *pvParameters)
     while (1)
     {
         // console_print((ledState = !ledState) ? "Led2 ON\n" : "Led2 OFF\n");
-
         dataMessage_t msg = {0};
-        BaseType_t xReturn;
+        xQueuePeek(*xMainQueue, &msg, pdMS_TO_TICKS(500));
+
         console_print("------(B)MainState------\n");
 
-        while ((xQueueReceive(*xMainQueue, &msg, pdMS_TO_TICKS(100))) == pdPASS)
+        while ((xQueueReceive(*xMainQueue, &msg, pdMS_TO_TICKS(0))) == pdPASS)
         {
             msg.timeStatus = STATUS_TIME_OK;
             switch (msg.id)
@@ -61,12 +61,12 @@ void TaskMain(void *pvParameters)
                 mainState.ThrottleCommand = msg;
                 break;
             }
-            console_print("Received from queue: id=%x, timestamp=%lu\n", msg.id, msg.timestamp);
+            console_print("Received from queue: id=%d, timestamp=%lu\n", msg.id, msg.timestamp);
         }
 
         if (mainState.lastCallTimeStmp - xTaskGetTickCount() > pdMS_TO_TICKS(5))
         {
-            float throttle = ProcessThrottle(mainState.ThrottleCommand.data, mainState.speed.data, mainState.motorTemp.data, mainState.inverterTemp.data, mainState.Voltage.data);
+            float throttle = ProcessThrottle(FP_TOFLOAT(mainState.ThrottleCommand.data), mainState.speed.data, mainState.motorTemp.data, mainState.inverterTemp.data, mainState.Voltage.data);
             dataMessage_t throttleMsg = {
                 .id = 0x50,                   // Throttle command message ID
                 .data = FP_FROMFLT(throttle), // Convert to percentage and scale
@@ -81,7 +81,6 @@ void TaskMain(void *pvParameters)
         PrintMainState(&mainState);
 
         console_print("------(E)MainState------\n\n");
-        mainState.lastCallTimeStmp = xTaskGetTickCount();
     }
 
     // xTaskDelayUntil(&timeNow, pdMS_TO_TICKS(1000));
@@ -90,12 +89,13 @@ void TaskMain(void *pvParameters)
 // function, to print current state of the motor controller (for debug)
 void PrintMainState(const MainState_t *mainState)
 {
+    // add timestate to each print
+
     console_print("Main State:\n");
-    console_print("  Throttle Command: %lu\n", mainState->ThrottleCommand.data);
-    console_print("  Speed: %lu\n", mainState->speed.data);
-    console_print("  Direction: %s\n", mainState->direction ? "Forward" : "Reverse");
+    console_print("  Throttle Command: %lu state:%d\n ", mainState->ThrottleCommand.data, mainState->ThrottleCommand.timeStatus);
+    console_print("  Speed: %lu state:%d\n", mainState->speed.data, mainState->speed.timeStatus);
     console_print("  Brake Pedal Pressed: %s\n", mainState->brakePedalPressed ? "Yes" : "No");
-    console_print("  Motor Temp: %d (timestamp: %lu)\n", mainState->motorTemp.data, mainState->motorTemp.timestamp);
-    console_print("  Inverter Temp: %d (timestamp: %lu)\n", mainState->inverterTemp.data, mainState->inverterTemp.timestamp);
-    console_print("  Voltage: %d (timestamp: %lu)\n", mainState->Voltage.data, mainState->Voltage.timestamp);
+    console_print("  Motor Temp: %d state:%d\n", mainState->motorTemp.data, mainState->motorTemp.timeStatus);
+    console_print("  Inverter Temp: %d state:%d\n", mainState->inverterTemp.data, mainState->inverterTemp.timeStatus);
+    console_print("  Voltage: %d state:%d\n", mainState->Voltage.data, mainState->Voltage.timeStatus);
 }
