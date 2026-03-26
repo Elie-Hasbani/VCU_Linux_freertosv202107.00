@@ -13,6 +13,7 @@ FREERTOS_PLUS_DIR     := $(abspath $(FREERTOS_PLUS_DIR_REL))
 KERNEL_DIR            := ${FREERTOS_DIR}/Source
 
 INCLUDE_DIRS          := -I./include
+INCLUDE_DIRS          += -I./Emulators
 INCLUDE_DIRS          += -I${KERNEL_DIR}/include
 INCLUDE_DIRS          += -I${KERNEL_DIR}/portable/ThirdParty/GCC/Posix
 INCLUDE_DIRS          += -I${KERNEL_DIR}/portable/ThirdParty/GCC/Posix/utils
@@ -20,6 +21,7 @@ INCLUDE_DIRS          += -I${FREERTOS_DIR}/Demo/Common/include
 INCLUDE_DIRS          += -I${FREERTOS_PLUS_DIR}/Source/FreeRTOS-Plus-Trace/Include
 
 SOURCE_FILES          := $(wildcard src/*.c)
+SOURCE_FILES          += $(wildcard Emulators/*.c)
 SOURCE_FILES          += $(wildcard ${FREERTOS_DIR}/Source/*.c)
 # Memory manager (use malloc() / free() )
 SOURCE_FILES          += ${KERNEL_DIR}/portable/MemMang/heap_3.c
@@ -31,7 +33,9 @@ SOURCE_FILES          += ${KERNEL_DIR}/portable/ThirdParty/GCC/Posix/port.c
 CFLAGS                :=    -ggdb3
 LDFLAGS               :=    -ggdb3 -pthread
 CPPFLAGS              :=    $(INCLUDE_DIRS) -DBUILD_DIR=\"$(BUILD_DIR_ABS)\"
-CPPFLAGS              +=    -D_WINDOWS_
+ifeq ($(LINUX),1)
+  CPPFLAGS += -DLINUX
+endif
 
 ifeq ($(TRACE_ON_ENTER),1)
   CPPFLAGS              += -DTRACE_ON_ENTER=1

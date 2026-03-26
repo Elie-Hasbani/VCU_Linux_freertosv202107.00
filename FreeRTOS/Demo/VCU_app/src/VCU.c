@@ -19,8 +19,9 @@
 #include "TaskCanTx.h"
 #include "TaskRawValuesProcessing.h"
 
-// test
-#include "EmulatorCanRX.h"
+#ifdef LINUX
+#include "CanISREmulator.h"
+#endif
 
 void MainApp(void)
 {
@@ -37,23 +38,15 @@ void MainApp(void)
     CanRxParams_t canRxParams = {&xMainQueue, &xTRVPQueue};
     CanTxParam_t canTxParams = {&xCanTxQueue};
     TRVPParams_t TRVPParams = {&xTRVPQueue, &xMainQueue};
-    /*xTaskCreate(
+    xTaskCreate(
         TaskCanRx,
         "CAN_RX",
         configMINIMAL_STACK_SIZE,
         &canRxParams,
-        tskIDLE_PRIORITY,
-        NULL);*/
-
-    xTaskCreate(
-        EmulatorCanRx,
-        "EmultorCanRx",
-        configMINIMAL_STACK_SIZE,
-        &canRxParams,
-        tskIDLE_PRIORITY,
+        2U,
         NULL);
 
-    xTaskCreate(
+    /*xTaskCreate(
         TaskMain,
         "MAIN",
         configMINIMAL_STACK_SIZE,
@@ -75,11 +68,20 @@ void MainApp(void)
         configMINIMAL_STACK_SIZE,
         &TRVPParams,
         2U,
+        NULL);*/
+
+#ifdef LINUX
+    xTaskCreate(
+        CanISREmulator,
+        "CanRxIsr",
+        configMINIMAL_STACK_SIZE,
+        NULL,
+        tskIDLE_PRIORITY,
         NULL);
 
-    vTaskStartScheduler();
+#endif
 
-    return;
+    vTaskStartScheduler();
 
     for (;;)
     {
